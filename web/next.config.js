@@ -85,6 +85,14 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 })
 
+// Optional: proxy API requests through Next.js (helps local dev against a remote backend
+// because Dify console auth relies on same-site cookies + readable CSRF cookie).
+// Example:
+//   NEXT_PUBLIC_API_PROXY_TARGET=http://222.186.56.132:9080
+//   NEXT_PUBLIC_API_PREFIX=/console/api
+//   NEXT_PUBLIC_PUBLIC_API_PREFIX=/api
+const apiProxyTarget = process.env.NEXT_PUBLIC_API_PROXY_TARGET
+
 // the default url to prevent parse url error when running jest
 const hasSetWebPrefix = process.env.NEXT_PUBLIC_WEB_PREFIX
 const port = process.env.PORT || 3000
@@ -136,6 +144,21 @@ const nextConfig = {
         source: '/',
         destination: '/apps',
         permanent: false,
+      },
+    ]
+  },
+  async rewrites() {
+    if (!apiProxyTarget)
+      return []
+
+    return [
+      {
+        source: '/console/api/:path*',
+        destination: `${apiProxyTarget}/console/api/:path*`,
+      },
+      {
+        source: '/api/:path*',
+        destination: `${apiProxyTarget}/api/:path*`,
       },
     ]
   },

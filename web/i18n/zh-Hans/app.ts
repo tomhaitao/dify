@@ -1,5 +1,8 @@
 const translation = {
   createApp: '创建应用',
+  quickCreate: {
+    title: '快速创建',
+  },
   types: {
     all: '全部',
     chatbot: '聊天助手',
@@ -64,6 +67,7 @@ const translation = {
     optional: '可选',
     captionDescription: '描述',
     appDescriptionPlaceholder: '输入应用的描述',
+    creatorPlaceholder: '输入创建人名称',
     useTemplate: '使用该模板',
     previewDemo: '预览 Demo',
     chatApp: '助手',
@@ -219,8 +223,29 @@ const translation = {
     params: '应用参数',
     noParams: '无需参数',
   },
-  openInExplore: '在“探索”中打开',
+  openInExplore: '在"探索"中打开',
   showMyCreatedAppsOnly: '我创建的',
+  table: {
+    title: '标题',
+    module: '所属模块',
+    status: '状态',
+    tags: '功能标签',
+    creator: '创建人',
+    updateTime: '更新时间',
+  },
+  moduleOptions: {
+    global: '全局',
+    college: '院校',
+    major: '专业',
+    skill: '技能',
+    career: '职业',
+    region: '区域',
+  },
+  statusOptions: {
+    testing: '测试',
+    inProgress: '进行中',
+    completed: '已完成',
+  },
   structOutput: {
     moreFillTip: '最多显示 10 级嵌套',
     required: '必填',

@@ -57,6 +57,10 @@ class AppService:
         if args.get("name"):
             name = args["name"][:30]
             filters.append(App.name.ilike(f"%{name}%"))
+        if args.get("module"):
+            filters.append(App.module == args["module"])
+        if args.get("app_status"):
+            filters.append(App.app_status == args["app_status"])
         # Check if tag_ids is not empty to avoid WHERE false condition
         if args.get("tag_ids") and len(args["tag_ids"]) > 0:
             target_ids = TagService.get_target_ids_by_tag_ids("app", tenant_id, args["tag_ids"])
@@ -137,6 +141,9 @@ class AppService:
         app.icon_type = args.get("icon_type", "emoji")
         app.icon = args["icon"]
         app.icon_background = args["icon_background"]
+        app.module = args.get("module")
+        app.app_status = args.get("status")
+        app.created_by_name = args.get("created_by_name")
         app.tenant_id = tenant_id
         app.api_rph = args.get("api_rph", 0)
         app.api_rpm = args.get("api_rpm", 0)
@@ -239,8 +246,11 @@ class AppService:
         icon_type: str
         icon: str
         icon_background: str
+        module: str | None
+        app_status: str | None
         use_icon_as_answer_icon: bool
-        max_active_requests: int
+        max_active_requests: int | None
+        created_by_name: str | None
 
     def update_app(self, app: App, args: ArgsDict) -> App:
         """
@@ -255,8 +265,11 @@ class AppService:
         app.icon_type = args["icon_type"]
         app.icon = args["icon"]
         app.icon_background = args["icon_background"]
+        app.module = args.get("module")
+        app.app_status = args.get("app_status")
         app.use_icon_as_answer_icon = args.get("use_icon_as_answer_icon", False)
         app.max_active_requests = args.get("max_active_requests")
+        app.created_by_name = args.get("created_by_name")
         app.updated_by = current_user.id
         app.updated_at = naive_utc_now()
         db.session.commit()

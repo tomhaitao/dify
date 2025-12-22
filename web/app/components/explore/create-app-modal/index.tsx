@@ -12,6 +12,7 @@ import Switch from '@/app/components/base/switch'
 import Toast from '@/app/components/base/toast'
 import AppIcon from '@/app/components/base/app-icon'
 import { useProviderContext } from '@/context/provider-context'
+import { SimpleSelect } from '@/app/components/base/select'
 import AppsFull from '@/app/components/billing/apps-full-in-dialog'
 import { type AppIconType, AppModeEnum } from '@/types/app'
 import { noop } from 'lodash-es'
@@ -26,7 +27,10 @@ export type CreateAppModalProps = {
   appIconBackground?: string | null
   appIconUrl?: string | null
   appMode?: string
+  appModule?: string | null
+  appStatus?: string | null
   appUseIconAsAnswerIcon?: boolean
+  appCreatorName?: string | null
   max_active_requests?: number | null
   onConfirm: (info: {
     name: string
@@ -34,8 +38,11 @@ export type CreateAppModalProps = {
     icon: string
     icon_background?: string
     description: string
+    module?: string | null
+    app_status?: string | null
     use_icon_as_answer_icon?: boolean
     max_active_requests?: number | null
+    created_by_name?: string | null
   }) => Promise<void>
   confirmDisabled?: boolean
   onHide: () => void
@@ -51,7 +58,10 @@ const CreateAppModal = ({
   appName,
   appDescription,
   appMode,
+  appModule,
+  appStatus,
   appUseIconAsAnswerIcon,
+  appCreatorName,
   max_active_requests,
   onConfirm,
   confirmDisabled,
@@ -67,7 +77,10 @@ const CreateAppModal = ({
   )
   const [showAppIconPicker, setShowAppIconPicker] = useState(false)
   const [description, setDescription] = useState(appDescription || '')
+  const [moduleValue, setModuleValue] = useState(appModule || '')
+  const [statusValue, setStatusValue] = useState(appStatus || '')
   const [useIconAsAnswerIcon, setUseIconAsAnswerIcon] = useState(appUseIconAsAnswerIcon || false)
+  const [creatorName, setCreatorName] = useState(appCreatorName || '')
 
   const [maxActiveRequestsInput, setMaxActiveRequestsInput] = useState(
     max_active_requests !== null && max_active_requests !== undefined ? String(max_active_requests) : '',
@@ -75,6 +88,21 @@ const CreateAppModal = ({
 
   const { plan, enableBilling } = useProviderContext()
   const isAppsFull = (enableBilling && plan.usage.buildApps >= plan.total.buildApps)
+
+  const moduleOptions = [
+    { value: 'global', name: t('app.moduleOptions.global') },
+    { value: 'college', name: t('app.moduleOptions.college') },
+    { value: 'major', name: t('app.moduleOptions.major') },
+    { value: 'skill', name: t('app.moduleOptions.skill') },
+    { value: 'career', name: t('app.moduleOptions.career') },
+    { value: 'region', name: t('app.moduleOptions.region') },
+  ]
+
+  const statusOptions = [
+    { value: 'testing', name: t('app.statusOptions.testing') },
+    { value: 'inProgress', name: t('app.statusOptions.inProgress') },
+    { value: 'completed', name: t('app.statusOptions.completed') },
+  ]
 
   const submit = useCallback(() => {
     if (!name.trim()) {
@@ -88,14 +116,17 @@ const CreateAppModal = ({
       icon: appIcon.type === 'emoji' ? appIcon.icon : appIcon.fileId,
       icon_background: appIcon.type === 'emoji' ? appIcon.background! : undefined,
       description,
+      module: moduleValue || null,
+      app_status: statusValue || null,
       use_icon_as_answer_icon: useIconAsAnswerIcon,
+      created_by_name: creatorName || null,
     }
     if (isValid)
       payload.max_active_requests = Number(maxActiveRequestsInput)
 
     onConfirm(payload)
     onHide()
-  }, [name, appIcon, description, useIconAsAnswerIcon, onConfirm, onHide, t, maxActiveRequestsInput])
+  }, [name, appIcon, description, moduleValue, statusValue, useIconAsAnswerIcon, creatorName, onConfirm, onHide, t, maxActiveRequestsInput])
 
   const { run: handleSubmit } = useDebounceFn(submit, { wait: 300 })
 
@@ -157,6 +188,44 @@ const CreateAppModal = ({
               onChange={e => setDescription(e.target.value)}
             />
           </div>
+          {isEditModal && (
+            <div className='pt-2'>
+              <div className='mb-1 flex h-6 items-center'>
+                <label className='text-sm font-medium leading-[20px] text-text-primary'>{t('app.table.module')}</label>
+                <span className='system-xs-regular ml-1 text-text-tertiary'>({t('app.newApp.optional')})</span>
+              </div>
+              <SimpleSelect
+                items={moduleOptions}
+                defaultValue={moduleValue}
+                onSelect={item => setModuleValue(item.value as string)}
+                placeholder={t('common.placeholder.select') || ''}
+              />
+              <div className='mt-3'>
+                <div className='mb-1 flex h-6 items-center'>
+                  <label className='text-sm font-medium leading-[20px] text-text-primary'>{t('app.table.status')}</label>
+                  <span className='system-xs-regular ml-1 text-text-tertiary'>({t('app.newApp.optional')})</span>
+                </div>
+                <SimpleSelect
+                  items={statusOptions}
+                  defaultValue={statusValue}
+                  onSelect={item => setStatusValue(item.value as string)}
+                  placeholder={t('common.placeholder.select') || ''}
+                />
+              </div>
+              <div className='mt-3'>
+                <div className='mb-1 flex h-6 items-center'>
+                  <label className='text-sm font-medium leading-[20px] text-text-primary'>{t('app.table.creator')}</label>
+                  <span className='system-xs-regular ml-1 text-text-tertiary'>({t('app.newApp.optional')})</span>
+                </div>
+                <Input
+                  value={creatorName}
+                  onChange={e => setCreatorName(e.target.value)}
+                  placeholder={t('app.newApp.creatorPlaceholder') || ''}
+                  className='h-10 w-full'
+                />
+              </div>
+            </div>
+          )}
           {/* answer icon */}
           {isEditModal && (appMode === AppModeEnum.CHAT || appMode === AppModeEnum.ADVANCED_CHAT || appMode === AppModeEnum.AGENT_CHAT) && (
             <div className='pt-2'>

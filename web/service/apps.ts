@@ -28,6 +28,9 @@ export const createApp = ({
   icon_background,
   mode,
   description,
+  module,
+  status,
+  created_by_name,
   config,
 }: {
   name: string
@@ -36,9 +39,12 @@ export const createApp = ({
   icon_background?: string
   mode: AppModeEnum
   description?: string
+  module?: string
+  status?: string
+  created_by_name?: string
   config?: ModelConfig
 }): Promise<AppDetailResponse> => {
-  return post<AppDetailResponse>('apps', { body: { name, icon_type, icon, icon_background, mode, description, model_config: config } })
+  return post<AppDetailResponse>('apps', { body: { name, icon_type, icon, icon_background, mode, description, module, status, created_by_name, model_config: config } })
 }
 
 export const updateAppInfo = ({
@@ -50,6 +56,9 @@ export const updateAppInfo = ({
   description,
   use_icon_as_answer_icon,
   max_active_requests,
+  module,
+  app_status,
+  created_by_name,
 }: {
   appID: string
   name: string
@@ -59,8 +68,11 @@ export const updateAppInfo = ({
   description: string
   use_icon_as_answer_icon?: boolean
   max_active_requests?: number | null
+  module?: string | null
+  app_status?: string | null
+  created_by_name?: string | null
 }): Promise<AppDetailResponse> => {
-  const body = { name, icon_type, icon, icon_background, description, use_icon_as_answer_icon, max_active_requests }
+  const body = { name, icon_type, icon, icon_background, description, module, app_status, use_icon_as_answer_icon, max_active_requests, created_by_name }
   return put<AppDetailResponse>(`apps/${appID}`, { body })
 }
 

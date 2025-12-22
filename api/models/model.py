@@ -87,6 +87,9 @@ class App(Base):
     app_model_config_id = mapped_column(StringUUID, nullable=True)
     workflow_id = mapped_column(StringUUID, nullable=True)
     status: Mapped[str] = mapped_column(String(255), server_default=sa.text("'normal'"))
+    module: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    app_status: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_by_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     enable_site: Mapped[bool] = mapped_column(sa.Boolean)
     enable_api: Mapped[bool] = mapped_column(sa.Boolean)
     api_rpm: Mapped[int] = mapped_column(sa.Integer, server_default=sa.text("0"))
@@ -304,6 +307,8 @@ class App(Base):
 
     @property
     def author_name(self) -> str | None:
+        if self.created_by_name:
+            return self.created_by_name
         if self.created_by:
             account = db.session.query(Account).where(Account.id == self.created_by).first()
             if account:

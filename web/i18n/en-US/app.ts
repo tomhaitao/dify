@@ -1,5 +1,8 @@
 const translation = {
   createApp: 'CREATE APP',
+  quickCreate: {
+    title: 'Quick Create',
+  },
   types: {
     all: 'All',
     chatbot: 'Chatbot',
@@ -65,6 +68,7 @@ const translation = {
     captionDescription: 'Description',
     optional: 'Optional',
     appDescriptionPlaceholder: 'Enter the description of the app',
+    creatorPlaceholder: 'Enter creator name',
     useTemplate: 'Use this template',
     previewDemo: 'Preview demo',
     chatApp: 'Assistant',
@@ -222,6 +226,27 @@ const translation = {
     noParams: 'No parameters needed',
   },
   showMyCreatedAppsOnly: 'Created by me',
+  table: {
+    title: 'Title',
+    module: 'Module',
+    status: 'Status',
+    tags: 'Tags',
+    creator: 'Creator',
+    updateTime: 'Update Time',
+  },
+  moduleOptions: {
+    global: 'Global',
+    college: 'College',
+    major: 'Major',
+    skill: 'Skill',
+    career: 'Career',
+    region: 'Region',
+  },
+  statusOptions: {
+    testing: 'Testing',
+    inProgress: 'In Progress',
+    completed: 'Completed',
+  },
   structOutput: {
     moreFillTip: 'Showing max 10 levels of nesting',
     required: 'Required',

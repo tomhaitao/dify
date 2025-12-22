@@ -50,6 +50,8 @@ class AppListQuery(BaseModel):
     name: str | None = Field(default=None, description="Filter by app name")
     tag_ids: list[str] | None = Field(default=None, description="Comma-separated tag IDs")
     is_created_by_me: bool | None = Field(default=None, description="Filter by creator")
+    module: str | None = Field(default=None, description="Filter by app module")
+    app_status: str | None = Field(default=None, description="Filter by app status")
 
     @field_validator("tag_ids", mode="before")
     @classmethod
@@ -80,6 +82,9 @@ class CreateAppPayload(BaseModel):
     icon_type: str | None = Field(default=None, description="Icon type")
     icon: str | None = Field(default=None, description="Icon")
     icon_background: str | None = Field(default=None, description="Icon background color")
+    module: str | None = Field(default=None, description="App module")
+    status: str | None = Field(default=None, description="App status")
+    created_by_name: str | None = Field(default=None, description="App creator name")
 
 
 class UpdateAppPayload(BaseModel):
@@ -88,8 +93,11 @@ class UpdateAppPayload(BaseModel):
     icon_type: str | None = Field(default=None, description="Icon type")
     icon: str | None = Field(default=None, description="Icon")
     icon_background: str | None = Field(default=None, description="Icon background color")
+    module: str | None = Field(default=None, description="App module")
+    app_status: str | None = Field(default=None, description="App status")
     use_icon_as_answer_icon: bool | None = Field(default=None, description="Use icon as answer icon")
     max_active_requests: int | None = Field(default=None, description="Maximum active requests")
+    created_by_name: str | None = Field(default=None, description="App creator name")
 
 
 class CopyAppPayload(BaseModel):
@@ -171,6 +179,8 @@ app_partial_model = console_ns.model(
         "max_active_requests": fields.Raw(),
         "description": fields.String(attribute="desc_or_prompt"),
         "mode": fields.String(attribute="mode_compatible_with_agent"),
+        "module": fields.String,
+        "app_status": fields.String,
         "icon_type": fields.String,
         "icon": fields.String,
         "icon_background": fields.String,
@@ -197,6 +207,8 @@ app_detail_model = console_ns.model(
         "name": fields.String,
         "description": fields.String,
         "mode": fields.String(attribute="mode_compatible_with_agent"),
+        "module": fields.String,
+        "app_status": fields.String,
         "icon": fields.String,
         "icon_background": fields.String,
         "enable_site": fields.Boolean,
@@ -221,6 +233,8 @@ app_detail_with_site_model = console_ns.model(
         "name": fields.String,
         "description": fields.String,
         "mode": fields.String(attribute="mode_compatible_with_agent"),
+        "module": fields.String,
+        "app_status": fields.String,
         "icon_type": fields.String,
         "icon": fields.String,
         "icon_background": fields.String,
@@ -240,6 +254,7 @@ app_detail_with_site_model = console_ns.model(
         "access_mode": fields.String,
         "tags": fields.List(fields.Nested(tag_model)),
         "site": fields.Nested(site_model),
+        "author_name": fields.String,
     },
 )
 
@@ -394,8 +409,11 @@ class AppApi(Resource):
             "icon_type": args.icon_type or "",
             "icon": args.icon or "",
             "icon_background": args.icon_background or "",
+            "module": args.module,
+            "app_status": args.app_status,
             "use_icon_as_answer_icon": args.use_icon_as_answer_icon or False,
             "max_active_requests": args.max_active_requests or 0,
+            "created_by_name": args.created_by_name,
         }
         app_model = app_service.update_app(app_model, args_dict)
 

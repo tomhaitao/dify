@@ -22,6 +22,7 @@ import { AppModeEnum } from '@/types/app'
 import { createApp } from '@/service/apps'
 import Input from '@/app/components/base/input'
 import Textarea from '@/app/components/base/textarea'
+import { SimpleSelect } from '@/app/components/base/select'
 import AppIcon from '@/app/components/base/app-icon'
 import AppsFull from '@/app/components/billing/apps-full-in-dialog'
 import { BubbleTextMod, ChatBot, ListSparkle, Logic } from '@/app/components/base/icons/src/vender/solid/communication'
@@ -48,8 +49,26 @@ function CreateApp({ onClose, onSuccess, onCreateFromTemplate, defaultAppMode }:
   const [appIcon, setAppIcon] = useState<AppIconSelection>({ type: 'emoji', icon: '🤖', background: '#FFEAD5' })
   const [showAppIconPicker, setShowAppIconPicker] = useState(false)
   const [name, setName] = useState('')
+  const [createdByName, setCreatedByName] = useState('')
   const [description, setDescription] = useState('')
+  const [appModule, setAppModule] = useState('')
+  const [appStatus, setAppStatus] = useState('')
   const [isAppTypeExpanded, setIsAppTypeExpanded] = useState(false)
+
+  const moduleOptions = [
+    { value: 'global', name: t('app.moduleOptions.global') },
+    { value: 'college', name: t('app.moduleOptions.college') },
+    { value: 'major', name: t('app.moduleOptions.major') },
+    { value: 'skill', name: t('app.moduleOptions.skill') },
+    { value: 'career', name: t('app.moduleOptions.career') },
+    { value: 'region', name: t('app.moduleOptions.region') },
+  ]
+
+  const statusOptions = [
+    { value: 'testing', name: t('app.statusOptions.testing') },
+    { value: 'inProgress', name: t('app.statusOptions.inProgress') },
+    { value: 'completed', name: t('app.statusOptions.completed') },
+  ]
 
   const { plan, enableBilling } = useProviderContext()
   const isAppsFull = (enableBilling && plan.usage.buildApps >= plan.total.buildApps)
@@ -82,6 +101,9 @@ function CreateApp({ onClose, onSuccess, onCreateFromTemplate, defaultAppMode }:
         icon: appIcon.type === 'emoji' ? appIcon.icon : appIcon.fileId,
         icon_background: appIcon.type === 'emoji' ? appIcon.background : undefined,
         mode: appMode,
+        module: appModule || undefined,
+        status: appStatus || undefined,
+        created_by_name: createdByName || undefined,
       })
 
       // Track app creation success
@@ -103,7 +125,7 @@ function CreateApp({ onClose, onSuccess, onCreateFromTemplate, defaultAppMode }:
       })
     }
     isCreatingRef.current = false
-  }, [name, notify, t, appMode, appIcon, description, onSuccess, onClose, push, isCurrentWorkspaceEditor])
+  }, [name, notify, t, appMode, appIcon, description, appModule, appStatus, createdByName, onSuccess, onClose, push, isCurrentWorkspaceEditor])
 
   const { run: handleCreateApp } = useDebounceFn(onCreate, { wait: 300 })
   useKeyPress(['meta.enter', 'ctrl.enter'], () => {
@@ -224,6 +246,17 @@ function CreateApp({ onClose, onSuccess, onCreateFromTemplate, defaultAppMode }:
             </div>
             <div>
               <div className='mb-1 flex h-6 items-center'>
+                <label className='system-sm-semibold text-text-secondary'>{t('app.table.creator')}</label>
+                <span className='system-xs-regular ml-1 text-text-tertiary'>({t('app.newApp.optional')})</span>
+              </div>
+              <Input
+                value={createdByName}
+                onChange={e => setCreatedByName(e.target.value)}
+                placeholder={t('app.newApp.creatorPlaceholder') || ''}
+              />
+            </div>
+            <div>
+              <div className='mb-1 flex h-6 items-center'>
                 <label className='system-sm-semibold text-text-secondary'>{t('app.newApp.captionDescription')}</label>
                 <span className='system-xs-regular ml-1 text-text-tertiary'>({t('app.newApp.optional')})</span>
               </div>
@@ -233,6 +266,32 @@ function CreateApp({ onClose, onSuccess, onCreateFromTemplate, defaultAppMode }:
                 value={description}
                 onChange={e => setDescription(e.target.value)}
               />
+            </div>
+            <div className='flex gap-4'>
+              <div className='flex-1'>
+                <div className='mb-1 flex h-6 items-center'>
+                  <label className='system-sm-semibold text-text-secondary'>{t('app.table.module')}</label>
+                  <span className='system-xs-regular ml-1 text-text-tertiary'>({t('app.newApp.optional')})</span>
+                </div>
+                <SimpleSelect
+                  items={moduleOptions}
+                  defaultValue={appModule}
+                  onSelect={item => setAppModule(item.value as string)}
+                  placeholder={t('common.placeholder.select') || ''}
+                />
+              </div>
+              <div className='flex-1'>
+                <div className='mb-1 flex h-6 items-center'>
+                  <label className='system-sm-semibold text-text-secondary'>{t('app.table.status')}</label>
+                  <span className='system-xs-regular ml-1 text-text-tertiary'>({t('app.newApp.optional')})</span>
+                </div>
+                <SimpleSelect
+                  items={statusOptions}
+                  defaultValue={appStatus}
+                  onSelect={item => setAppStatus(item.value as string)}
+                  placeholder={t('common.placeholder.select') || ''}
+                />
+              </div>
             </div>
           </div>
           {isAppsFull && <AppsFull className='mt-4' loc='app-create' />}

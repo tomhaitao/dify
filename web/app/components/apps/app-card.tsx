@@ -97,8 +97,11 @@ const AppCard = ({ app, onRefresh }: AppCardProps) => {
     icon,
     icon_background,
     description,
+    module,
+    app_status,
     use_icon_as_answer_icon,
     max_active_requests,
+    created_by_name,
   }) => {
     try {
       await updateAppInfo({
@@ -108,8 +111,11 @@ const AppCard = ({ app, onRefresh }: AppCardProps) => {
         icon,
         icon_background,
         description,
+        module,
+        app_status,
         use_icon_as_answer_icon,
         max_active_requests,
+        created_by_name,
       })
       setShowEditModal(false)
       notify({
@@ -334,6 +340,21 @@ const AppCard = ({ app, onRefresh }: AppCardProps) => {
     setTags(app.tags)
   }, [app.tags])
 
+  const moduleDisplayMap: Record<string, string> = useMemo(() => ({
+    global: t('app.moduleOptions.global'),
+    college: t('app.moduleOptions.college'),
+    major: t('app.moduleOptions.major'),
+    skill: t('app.moduleOptions.skill'),
+    career: t('app.moduleOptions.career'),
+    region: t('app.moduleOptions.region'),
+  }), [t])
+
+  const statusDisplayMap: Record<string, string> = useMemo(() => ({
+    testing: t('app.statusOptions.testing'),
+    inProgress: t('app.statusOptions.inProgress'),
+    completed: t('app.statusOptions.completed'),
+  }), [t])
+
   const EditTimeText = useMemo(() => {
     const timeText = formatTime({
       date: (app.updated_at || app.created_at) * 1000,
@@ -367,7 +388,7 @@ const AppCard = ({ app, onRefresh }: AppCardProps) => {
               <div className='truncate' title={app.name}>{app.name}</div>
             </div>
             <div className='flex items-center gap-1 text-[10px] font-medium leading-[18px] text-text-tertiary'>
-              <div className='truncate' title={app.author_name}>{app.author_name}</div>
+              <div className='truncate' title={app.author_name || '-'}>{app.author_name || '-'}</div>
               <div>·</div>
               <div className='truncate' title={EditTimeText}>{EditTimeText}</div>
             </div>
@@ -402,7 +423,7 @@ const AppCard = ({ app, onRefresh }: AppCardProps) => {
                 e.stopPropagation()
                 e.preventDefault()
               }}>
-                <div className='mr-[41px] w-full grow group-hover:!mr-0'>
+                <div className='mr-[41px] flex w-full grow items-center gap-2 group-hover:!mr-0'>
                   <TagSelector
                     position='bl'
                     type='app'
@@ -412,6 +433,27 @@ const AppCard = ({ app, onRefresh }: AppCardProps) => {
                     onCacheUpdate={setTags}
                     onChange={onRefresh}
                   />
+                  {app.module && (
+                    <div className='shrink-0 truncate text-[10px] font-bold text-text-secondary' title={moduleDisplayMap[app.module]}>
+                      {`【 ${moduleDisplayMap[app.module] || app.module} 】`}
+                    </div>
+                  )}
+                  {app.app_status && (
+                    <div className={cn(
+                      'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
+                      app.app_status === 'inProgress' && 'bg-[#e1f0ff] text-[#2b85e4]',
+                      app.app_status === 'testing' && 'bg-[#fff5e6] text-[#f29100]',
+                      app.app_status === 'completed' && 'bg-[#ffebf0] text-[#e84e72]',
+                    )}>
+                      <div className={cn(
+                        'h-1 w-1 rounded-full',
+                        app.app_status === 'inProgress' && 'bg-[#2b85e4]',
+                        app.app_status === 'testing' && 'bg-[#f29100]',
+                        app.app_status === 'completed' && 'bg-[#e84e72]',
+                      )} />
+                      {statusDisplayMap[app.app_status] || app.app_status}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className='mx-1 !hidden h-[14px] w-[1px] shrink-0 bg-divider-regular group-hover:!flex' />
@@ -454,8 +496,11 @@ const AppCard = ({ app, onRefresh }: AppCardProps) => {
           appIconBackground={app.icon_background}
           appIconUrl={app.icon_url}
           appDescription={app.description}
+          appModule={app.module}
+          appStatus={app.app_status}
           appMode={app.mode}
           appUseIconAsAnswerIcon={app.use_icon_as_answer_icon}
+          appCreatorName={app.author_name}
           max_active_requests={app.max_active_requests ?? null}
           show={showEditModal}
           onConfirm={onEdit}

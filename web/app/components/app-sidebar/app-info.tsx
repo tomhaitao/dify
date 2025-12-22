@@ -80,8 +80,11 @@ const AppInfo = ({ expand, onlyShowDetail = false, openState = false, onDetailEx
     icon,
     icon_background,
     description,
+    module,
+    app_status,
     use_icon_as_answer_icon,
     max_active_requests,
+    created_by_name,
   }) => {
     if (!appDetail)
       return
@@ -93,8 +96,11 @@ const AppInfo = ({ expand, onlyShowDetail = false, openState = false, onDetailEx
         icon,
         icon_background,
         description,
+        module,
+        app_status,
         use_icon_as_answer_icon,
         max_active_requests,
+        created_by_name,
       })
       setShowEditModal(false)
       notify({
@@ -405,8 +411,11 @@ const AppInfo = ({ expand, onlyShowDetail = false, openState = false, onDetailEx
           appIconBackground={appDetail.icon_background}
           appIconUrl={appDetail.icon_url}
           appDescription={appDetail.description}
+          appModule={appDetail.module}
+          appStatus={appDetail.app_status}
           appMode={appDetail.mode}
           appUseIconAsAnswerIcon={appDetail.use_icon_as_answer_icon}
+          appCreatorName={appDetail.author_name}
           max_active_requests={appDetail.max_active_requests ?? null}
           show={showEditModal}
           onConfirm={onEdit}

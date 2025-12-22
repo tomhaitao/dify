@@ -328,7 +328,11 @@ export type App = {
   /** Description */
   description: string
   /** Author Name */
-  author_name: string;
+  author_name: string
+  /** Module */
+  module?: string
+  /** App Status */
+  app_status?: string
 
   /**
    * Icon Type
