@@ -763,6 +763,9 @@ const translation = {
   },
   pagination: {
     perPage: '每页显示',
+    rowsPerPage: '每页行数',
+    page: '第',
+    of: '页，共',
   },
   avatar: {
     deleteTitle: '删除头像',

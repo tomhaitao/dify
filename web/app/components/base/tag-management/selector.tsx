@@ -1,12 +1,15 @@
 import type { FC } from 'react'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useStore as useTagStore } from './store'
-import cn from '@/utils/classnames'
-import CustomPopover from '@/app/components/base/popover'
 import type { Tag } from '@/app/components/base/tag-management/constant'
 import { fetchTagList } from '@/service/tag'
 import Trigger from './trigger'
 import Panel from './panel'
+import {
+  PortalToFollowElem,
+  PortalToFollowElemContent,
+  PortalToFollowElemTrigger,
+} from '@/app/components/base/portal-to-follow-elem'
 
 export type TagSelectorProps = {
   targetID: string
@@ -23,16 +26,16 @@ export type TagSelectorProps = {
 const TagSelector: FC<TagSelectorProps> = ({
   targetID,
   isPopover = true,
-  position,
+  position = 'bl',
   type,
   value,
   selectedTags,
   onCacheUpdate,
   onChange,
-  minWidth,
 }) => {
   const tagList = useTagStore(s => s.tagList)
   const setTagList = useTagStore(s => s.setTagList)
+  const [open, setOpen] = useState(false)
 
   const getTagList = useCallback(async () => {
     const res = await fetchTagList(type)
@@ -48,30 +51,32 @@ const TagSelector: FC<TagSelectorProps> = ({
   return (
     <>
       {isPopover && (
-        <CustomPopover
-          htmlContent={
-            <Panel
-              type={type}
-              targetID={targetID}
-              value={value}
-              selectedTags={selectedTags}
-              onCacheUpdate={onCacheUpdate}
-              onChange={onChange}
-              onCreate={getTagList}
-            />
-          }
-          position={position}
-          trigger='click'
-          btnElement={<Trigger tags={tags} />}
-          btnClassName={open =>
-            cn(
-              open ? '!bg-state-base-hover !text-text-secondary' : '!bg-transparent',
-              '!w-full !border-0 !p-0 !text-text-tertiary hover:!bg-state-base-hover hover:!text-text-secondary',
-            )
-          }
-          popupClassName={cn('!w-full !ring-0', minWidth && '!min-w-80')}
-          className={'!z-20 h-fit !w-full'}
-        />
+        <PortalToFollowElem
+          open={open}
+          onOpenChange={setOpen}
+          placement={position === 'br' ? 'bottom-end' : 'bottom-start'}
+          offset={4}
+        >
+          <PortalToFollowElemTrigger onClick={() => setOpen(v => !v)}>
+            <Trigger tags={tags} />
+          </PortalToFollowElemTrigger>
+          <PortalToFollowElemContent className='z-50'>
+            <div
+              className='w-[280px]'
+              onMouseLeave={() => setOpen(false)}
+            >
+              <Panel
+                type={type}
+                targetID={targetID}
+                value={value}
+                selectedTags={selectedTags}
+                onCacheUpdate={onCacheUpdate}
+                onChange={onChange}
+                onCreate={getTagList}
+              />
+            </div>
+          </PortalToFollowElemContent>
+        </PortalToFollowElem>
       )}
     </>
 

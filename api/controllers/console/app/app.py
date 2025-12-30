@@ -52,6 +52,7 @@ class AppListQuery(BaseModel):
     is_created_by_me: bool | None = Field(default=None, description="Filter by creator")
     module: str | None = Field(default=None, description="Filter by app module")
     app_status: str | None = Field(default=None, description="Filter by app status")
+    author_name: str | None = Field(default=None, description="Filter by author name")
 
     @field_validator("tag_ids", mode="before")
     @classmethod

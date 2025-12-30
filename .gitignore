@@ -245,3 +245,5 @@ scripts/stress-test/reports/
 
 # settings
 *.local.json
+
+server.txt

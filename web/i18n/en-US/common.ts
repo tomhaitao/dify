@@ -769,6 +769,9 @@ const translation = {
   },
   pagination: {
     perPage: 'Items per page',
+    rowsPerPage: 'Rows per page',
+    page: 'Page',
+    of: 'of',
   },
   avatar: {
     deleteTitle: 'Remove Avatar',

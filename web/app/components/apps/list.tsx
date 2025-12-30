@@ -14,7 +14,7 @@ import {
   RiMessage3Line,
   RiRobot3Line,
 } from '@remixicon/react'
-import AppCard from './app-card'
+import AppCardView from './app-card-view'
 import AppTableView from './app-table-view'
 import ViewToggle, { type ViewMode } from './view-toggle'
 import QuickCreate from './quick-create'
@@ -55,12 +55,13 @@ const List = () => {
   const [activeTab, setActiveTab] = useTabSearchParams({
     defaultTab: 'all',
   })
-  const { query: { tagIDs = [], keywords = '', isCreatedByMe: queryIsCreatedByMe = false, module: queryModule = '', appStatus: queryAppStatus = '' }, setQuery } = useAppsQueryState()
+  const { query: { tagIDs = [], keywords = '', isCreatedByMe: queryIsCreatedByMe = false, module: queryModule = '', appStatus: queryAppStatus = '', authorName: queryAuthorName = '' }, setQuery } = useAppsQueryState()
   const [isCreatedByMe, setIsCreatedByMe] = useState(queryIsCreatedByMe)
   const [tagFilterValue, setTagFilterValue] = useState<string[]>(tagIDs)
   const [searchKeywords, setSearchKeywords] = useState(keywords)
   const [moduleFilter, setModuleFilter] = useState(queryModule)
   const [statusFilter, setStatusFilter] = useState(queryAppStatus)
+  const [creatorFilter, setCreatorFilter] = useState(queryAuthorName)
   const containerRef = useRef<HTMLDivElement>(null)
   const [showCreateFromDSLModal, setShowCreateFromDSLModal] = useState(false)
   const [droppedDSLFile, setDroppedDSLFile] = useState<File | undefined>()
@@ -101,6 +102,21 @@ const List = () => {
     { value: 'completed', label: t('app.statusOptions.completed') },
   ]
 
+  const creatorOptions = [
+    { value: '', label: t('app.table.creator') },
+    { value: 'chen', label: 'chen' },
+    { value: 'zing', label: 'zing' },
+    { value: 'erik', label: 'erik' },
+    { value: 'flex', label: 'flex' },
+    { value: 'alan', label: 'alan' },
+    { value: 'tony', label: 'tony' },
+  ]
+
+  const handleCreatorChange = useCallback((value: string) => {
+    setCreatorFilter(value)
+    setQuery(prev => ({ ...prev, authorName: value }))
+  }, [setQuery])
+
   const handleDSLFileDropped = useCallback((file: File) => {
     setDroppedDSLFile(file)
     setShowCreateFromDSLModal(true)
@@ -121,6 +137,7 @@ const List = () => {
     ...(activeTab !== 'all' ? { mode: activeTab as AppModeEnum } : {}),
     ...(moduleFilter ? { module: moduleFilter } : {}),
     ...(statusFilter ? { app_status: statusFilter } : {}),
+    ...(creatorFilter ? { author_name: creatorFilter } : {}),
   }
 
   const {
@@ -212,7 +229,7 @@ const List = () => {
 
   return (
     <>
-      <div ref={containerRef} className='relative flex h-0 shrink-0 grow flex-col overflow-y-auto bg-background-body'>
+      <div ref={containerRef} className='relative m-4 mx-auto flex h-0 w-full max-w-[1600px] shrink-0 grow flex-col overflow-y-auto rounded-xl bg-white'>
         {dragging && (
           <div className="absolute inset-0 z-50 m-0.5 rounded-2xl border-2 border-dashed border-components-dropzone-border-accent bg-[rgba(21,90,239,0.14)] p-2">
           </div>
@@ -221,7 +238,7 @@ const List = () => {
           <QuickCreate onSuccess={refetch} selectedAppType={activeTab} />
         )}
 
-        <div className='sticky top-0 z-10 flex flex-col gap-4 bg-background-body px-12 pb-5 pt-7'>
+        <div className='sticky top-0 z-10 flex flex-col gap-4 bg-background-body bg-white px-8 pb-5 pt-7'>
           <div className='flex flex-wrap items-center justify-between gap-y-2'>
             <div className='flex items-center gap-3'>
               <TabSliderNew
@@ -249,6 +266,12 @@ const List = () => {
                 onChange={handleModuleChange}
                 triggerProps={{ className: 'min-w-[80px]' }}
               />
+              <PureSelect
+                value={creatorFilter}
+                options={creatorOptions}
+                onChange={handleCreatorChange}
+                triggerProps={{ className: 'min-w-[80px]' }}
+              />
               <TagFilter type='app' value={tagFilterValue} onChange={handleTagsChange} />
               <Input
                 showLeftIcon
@@ -265,7 +288,7 @@ const List = () => {
         {hasAnyApp
           ? viewMode === 'table'
             ? (
-              <div className='flex grow flex-col px-12 pt-2'>
+              <div className='flex min-h-0 flex-1 flex-col overflow-hidden px-8 pt-2'>
                 <AppTableView
                   apps={pages.flatMap(page => page.data)}
                   onRefresh={refetch}
@@ -273,10 +296,11 @@ const List = () => {
               </div>
             )
             : (
-              <div className='relative grid grow grid-cols-1 content-start gap-4 px-12 pt-2 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 2k:grid-cols-6'>
-                {pages.map(({ data: apps }) => apps.map(app => (
-                  <AppCard key={app.id} app={app} onRefresh={refetch} />
-                )))}
+              <div className='flex min-h-0 flex-1 flex-col overflow-hidden px-8 pt-2'>
+                <AppCardView
+                  apps={pages.flatMap(page => page.data)}
+                  onRefresh={refetch}
+                />
               </div>
             )
           : <div className='relative grid grow grid-cols-1 content-start gap-4 overflow-hidden px-12 pt-2 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 2k:grid-cols-6'>

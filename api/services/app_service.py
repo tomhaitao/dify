@@ -61,6 +61,9 @@ class AppService:
             filters.append(App.module == args["module"])
         if args.get("app_status"):
             filters.append(App.app_status == args["app_status"])
+        if args.get("author_name"):
+            author_name = args["author_name"]
+            filters.append(App.created_by_name.ilike(f"%{author_name}%"))
         # Check if tag_ids is not empty to avoid WHERE false condition
         if args.get("tag_ids") and len(args["tag_ids"]) > 0:
             target_ids = TagService.get_target_ids_by_tag_ids("app", tenant_id, args["tag_ids"])

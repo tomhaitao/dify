@@ -30,6 +30,7 @@ type AppListParams = {
   is_created_by_me?: boolean
   module?: string
   app_status?: string
+  author_name?: string
 }
 
 type DateRangeParams = {
@@ -47,6 +48,7 @@ const normalizeAppListParams = (params: AppListParams) => {
     is_created_by_me,
     module,
     app_status,
+    author_name,
   } = params
 
   return {
@@ -58,6 +60,7 @@ const normalizeAppListParams = (params: AppListParams) => {
     ...(is_created_by_me ? { is_created_by_me } : {}),
     ...(module ? { module } : {}),
     ...(app_status ? { app_status } : {}),
+    ...(author_name ? { author_name } : {}),
   }
 }
 

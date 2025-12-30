@@ -114,6 +114,8 @@ const translation = {
   editAppTitle: '编辑应用信息',
   editDone: '应用信息已更新',
   editFailed: '更新应用信息失败',
+  selectModule: '选择模块',
+  selectStatus: '选择状态',
   iconPicker: {
     ok: '确认',
     cancel: '取消',
@@ -232,6 +234,7 @@ const translation = {
     tags: '功能标签',
     creator: '创建人',
     updateTime: '更新时间',
+    actions: '操作',
   },
   moduleOptions: {
     global: '全局',
@@ -245,6 +248,11 @@ const translation = {
     testing: '测试',
     inProgress: '进行中',
     completed: '已完成',
+  },
+  validation: {
+    moduleRequired: '请选择所属模块',
+    statusRequired: '请选择状态',
+    creatorRequired: '请选择创建人',
   },
   structOutput: {
     moreFillTip: '最多显示 10 级嵌套',

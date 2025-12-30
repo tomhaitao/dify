@@ -23,6 +23,7 @@ import { createApp } from '@/service/apps'
 import Input from '@/app/components/base/input'
 import Textarea from '@/app/components/base/textarea'
 import { SimpleSelect } from '@/app/components/base/select'
+import PureSelect from '@/app/components/base/select/pure'
 import AppIcon from '@/app/components/base/app-icon'
 import AppsFull from '@/app/components/billing/apps-full-in-dialog'
 import { BubbleTextMod, ChatBot, ListSparkle, Logic } from '@/app/components/base/icons/src/vender/solid/communication'
@@ -49,7 +50,7 @@ function CreateApp({ onClose, onSuccess, onCreateFromTemplate, defaultAppMode }:
   const [appIcon, setAppIcon] = useState<AppIconSelection>({ type: 'emoji', icon: '🤖', background: '#FFEAD5' })
   const [showAppIconPicker, setShowAppIconPicker] = useState(false)
   const [name, setName] = useState('')
-  const [createdByName, setCreatedByName] = useState('')
+  const [createdByNames, setCreatedByNames] = useState<string[]>([])
   const [description, setDescription] = useState('')
   const [appModule, setAppModule] = useState('')
   const [appStatus, setAppStatus] = useState('')
@@ -103,7 +104,7 @@ function CreateApp({ onClose, onSuccess, onCreateFromTemplate, defaultAppMode }:
         mode: appMode,
         module: appModule || undefined,
         status: appStatus || undefined,
-        created_by_name: createdByName || undefined,
+        created_by_name: createdByNames.length > 0 ? createdByNames.join(',') : undefined,
       })
 
       // Track app creation success
@@ -125,7 +126,7 @@ function CreateApp({ onClose, onSuccess, onCreateFromTemplate, defaultAppMode }:
       })
     }
     isCreatingRef.current = false
-  }, [name, notify, t, appMode, appIcon, description, appModule, appStatus, createdByName, onSuccess, onClose, push, isCurrentWorkspaceEditor])
+  }, [name, notify, t, appMode, appIcon, description, appModule, appStatus, createdByNames, onSuccess, onClose, push, isCurrentWorkspaceEditor])
 
   const { run: handleCreateApp } = useDebounceFn(onCreate, { wait: 300 })
   useKeyPress(['meta.enter', 'ctrl.enter'], () => {
@@ -247,12 +248,22 @@ function CreateApp({ onClose, onSuccess, onCreateFromTemplate, defaultAppMode }:
             <div>
               <div className='mb-1 flex h-6 items-center'>
                 <label className='system-sm-semibold text-text-secondary'>{t('app.table.creator')}</label>
-                <span className='system-xs-regular ml-1 text-text-tertiary'>({t('app.newApp.optional')})</span>
               </div>
-              <Input
-                value={createdByName}
-                onChange={e => setCreatedByName(e.target.value)}
+              <PureSelect
+                multiple={true}
+                options={[
+                  { value: 'chen', label: 'chen' },
+                  { value: 'zing', label: 'zing' },
+                  { value: 'erik', label: 'erik' },
+                  { value: 'flex', label: 'flex' },
+                  { value: 'alan', label: 'alan' },
+                  { value: 'tony', label: 'tony' },
+                ]}
+                value={createdByNames}
+                onChange={values => setCreatedByNames(values)}
                 placeholder={t('app.newApp.creatorPlaceholder') || ''}
+                triggerPopupSameWidth={true}
+                renderTriggerText={selectedValues => selectedValues.join(', ')}
               />
             </div>
             <div>
@@ -271,7 +282,6 @@ function CreateApp({ onClose, onSuccess, onCreateFromTemplate, defaultAppMode }:
               <div className='flex-1'>
                 <div className='mb-1 flex h-6 items-center'>
                   <label className='system-sm-semibold text-text-secondary'>{t('app.table.module')}</label>
-                  <span className='system-xs-regular ml-1 text-text-tertiary'>({t('app.newApp.optional')})</span>
                 </div>
                 <SimpleSelect
                   items={moduleOptions}
@@ -283,7 +293,6 @@ function CreateApp({ onClose, onSuccess, onCreateFromTemplate, defaultAppMode }:
               <div className='flex-1'>
                 <div className='mb-1 flex h-6 items-center'>
                   <label className='system-sm-semibold text-text-secondary'>{t('app.table.status')}</label>
-                  <span className='system-xs-regular ml-1 text-text-tertiary'>({t('app.newApp.optional')})</span>
                 </div>
                 <SimpleSelect
                   items={statusOptions}
@@ -304,7 +313,7 @@ function CreateApp({ onClose, onSuccess, onCreateFromTemplate, defaultAppMode }:
             </div>
             <div className='flex gap-2'>
               <Button onClick={onClose}>{t('app.newApp.Cancel')}</Button>
-              <Button disabled={isAppsFull || !name} className='gap-1' variant="primary" onClick={handleCreateApp}>
+              <Button disabled={isAppsFull || !name || createdByNames.length === 0 || !appModule || !appStatus} className='gap-1' variant="primary" onClick={handleCreateApp}>
                 <span>{t('app.newApp.Create')}</span>
                 <div className='flex gap-0.5'>
                   <RiCommandLine size={14} className='system-kbd rounded-sm bg-components-kbd-bg-white p-0.5' />

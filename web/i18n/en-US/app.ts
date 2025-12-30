@@ -115,6 +115,8 @@ const translation = {
   editAppTitle: 'Edit App Info',
   editDone: 'App info updated',
   editFailed: 'Failed to update app info',
+  selectModule: 'Select Module',
+  selectStatus: 'Select Status',
   iconPicker: {
     ok: 'OK',
     cancel: 'Cancel',
@@ -233,6 +235,7 @@ const translation = {
     tags: 'Tags',
     creator: 'Creator',
     updateTime: 'Update Time',
+    actions: 'Actions',
   },
   moduleOptions: {
     global: 'Global',
@@ -246,6 +249,11 @@ const translation = {
     testing: 'Testing',
     inProgress: 'In Progress',
     completed: 'Completed',
+  },
+  validation: {
+    moduleRequired: 'Please select a module',
+    statusRequired: 'Please select a status',
+    creatorRequired: 'Please select a creator',
   },
   structOutput: {
     moreFillTip: 'Showing max 10 levels of nesting',

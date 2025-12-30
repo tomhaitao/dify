@@ -13,6 +13,7 @@ import Toast from '@/app/components/base/toast'
 import AppIcon from '@/app/components/base/app-icon'
 import { useProviderContext } from '@/context/provider-context'
 import { SimpleSelect } from '@/app/components/base/select'
+import PureSelect from '@/app/components/base/select/pure'
 import AppsFull from '@/app/components/billing/apps-full-in-dialog'
 import { type AppIconType, AppModeEnum } from '@/types/app'
 import { noop } from 'lodash-es'
@@ -80,7 +81,14 @@ const CreateAppModal = ({
   const [moduleValue, setModuleValue] = useState(appModule || '')
   const [statusValue, setStatusValue] = useState(appStatus || '')
   const [useIconAsAnswerIcon, setUseIconAsAnswerIcon] = useState(appUseIconAsAnswerIcon || false)
-  const [creatorName, setCreatorName] = useState(appCreatorName || '')
+  // Valid creator options
+  const validCreatorValues = ['chen', 'zing', 'erik', 'flex', 'alan', 'tony']
+
+  // Parse comma-separated creator names into array, filtering out invalid values like 'admin'
+  const [creatorNames, setCreatorNames] = useState<string[]>(() => {
+    if (!appCreatorName) return []
+    return appCreatorName.split(',').map(name => name.trim()).filter(name => validCreatorValues.includes(name))
+  })
 
   const [maxActiveRequestsInput, setMaxActiveRequestsInput] = useState(
     max_active_requests !== null && max_active_requests !== undefined ? String(max_active_requests) : '',
@@ -109,6 +117,21 @@ const CreateAppModal = ({
       Toast.notify({ type: 'error', message: t('explore.appCustomize.nameRequired') })
       return
     }
+    // Validate required fields in edit modal
+    if (isEditModal) {
+      if (!moduleValue) {
+        Toast.notify({ type: 'error', message: t('app.validation.moduleRequired') })
+        return
+      }
+      if (!statusValue) {
+        Toast.notify({ type: 'error', message: t('app.validation.statusRequired') })
+        return
+      }
+      if (creatorNames.length === 0) {
+        Toast.notify({ type: 'error', message: t('app.validation.creatorRequired') })
+        return
+      }
+    }
     const isValid = maxActiveRequestsInput.trim() !== '' && !isNaN(Number(maxActiveRequestsInput))
     const payload: any = {
       name,
@@ -119,14 +142,14 @@ const CreateAppModal = ({
       module: moduleValue || null,
       app_status: statusValue || null,
       use_icon_as_answer_icon: useIconAsAnswerIcon,
-      created_by_name: creatorName || null,
+      created_by_name: creatorNames.length > 0 ? creatorNames.join(',') : null,
     }
     if (isValid)
       payload.max_active_requests = Number(maxActiveRequestsInput)
 
     onConfirm(payload)
     onHide()
-  }, [name, appIcon, description, moduleValue, statusValue, useIconAsAnswerIcon, creatorName, onConfirm, onHide, t, maxActiveRequestsInput])
+  }, [name, appIcon, description, moduleValue, statusValue, useIconAsAnswerIcon, creatorNames, onConfirm, onHide, t, maxActiveRequestsInput, isEditModal])
 
   const { run: handleSubmit } = useDebounceFn(submit, { wait: 300 })
 
@@ -192,7 +215,7 @@ const CreateAppModal = ({
             <div className='pt-2'>
               <div className='mb-1 flex h-6 items-center'>
                 <label className='text-sm font-medium leading-[20px] text-text-primary'>{t('app.table.module')}</label>
-                <span className='system-xs-regular ml-1 text-text-tertiary'>({t('app.newApp.optional')})</span>
+                <span className='ml-1 text-red-500'>*</span>
               </div>
               <SimpleSelect
                 items={moduleOptions}
@@ -203,7 +226,7 @@ const CreateAppModal = ({
               <div className='mt-3'>
                 <div className='mb-1 flex h-6 items-center'>
                   <label className='text-sm font-medium leading-[20px] text-text-primary'>{t('app.table.status')}</label>
-                  <span className='system-xs-regular ml-1 text-text-tertiary'>({t('app.newApp.optional')})</span>
+                  <span className='ml-1 text-red-500'>*</span>
                 </div>
                 <SimpleSelect
                   items={statusOptions}
@@ -215,13 +238,23 @@ const CreateAppModal = ({
               <div className='mt-3'>
                 <div className='mb-1 flex h-6 items-center'>
                   <label className='text-sm font-medium leading-[20px] text-text-primary'>{t('app.table.creator')}</label>
-                  <span className='system-xs-regular ml-1 text-text-tertiary'>({t('app.newApp.optional')})</span>
+                  <span className='ml-1 text-red-500'>*</span>
                 </div>
-                <Input
-                  value={creatorName}
-                  onChange={e => setCreatorName(e.target.value)}
+                <PureSelect
+                  multiple={true}
+                  options={[
+                    { value: 'chen', label: 'chen' },
+                    { value: 'zing', label: 'zing' },
+                    { value: 'erik', label: 'erik' },
+                    { value: 'flex', label: 'flex' },
+                    { value: 'alan', label: 'alan' },
+                    { value: 'tony', label: 'tony' },
+                  ]}
+                  value={creatorNames}
+                  onChange={values => setCreatorNames(values)}
                   placeholder={t('app.newApp.creatorPlaceholder') || ''}
-                  className='h-10 w-full'
+                  triggerPopupSameWidth={true}
+                  renderTriggerText={selectedValues => selectedValues.join(', ')}
                 />
               </div>
             </div>

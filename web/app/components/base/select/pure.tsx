@@ -42,6 +42,7 @@ type SharedPureSelectProps = {
   placeholder?: string
   disabled?: boolean
   triggerPopupSameWidth?: boolean
+  renderTriggerText?: (selectedValues: string[], options: Option[]) => string
 }
 
 type SingleSelectProps = {
@@ -66,6 +67,7 @@ const PureSelect = (props: PureSelectProps) => {
     placeholder,
     disabled,
     triggerPopupSameWidth,
+    renderTriggerText,
     multiple,
     value,
     onChange,
@@ -98,11 +100,16 @@ const PureSelect = (props: PureSelectProps) => {
 
   const triggerText = useMemo(() => {
     const placeholderText = placeholder || t('common.placeholder.select')
-    if (multiple)
-      return value?.length ? t('common.dynamicSelect.selected', { count: value.length }) : placeholderText
+    if (multiple) {
+      if (!value?.length)
+        return placeholderText
+      if (renderTriggerText)
+        return renderTriggerText(value, options)
+      return t('common.dynamicSelect.selected', { count: value.length })
+    }
 
     return options.find(option => option.value === value)?.label || placeholderText
-  }, [multiple, value, options, placeholder])
+  }, [multiple, value, options, placeholder, renderTriggerText])
 
   return (
     <PortalToFollowElem

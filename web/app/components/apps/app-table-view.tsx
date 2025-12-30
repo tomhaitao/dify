@@ -1,10 +1,11 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useContext } from 'use-context-selector'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import { RiMoreFill } from '@remixicon/react'
+import { RiEditLine, RiMoreFill } from '@remixicon/react'
 import cn from '@/utils/classnames'
 import { type App, AppModeEnum } from '@/types/app'
 import Toast, { ToastContext } from '@/app/components/base/toast'
@@ -30,7 +31,6 @@ import { fetchInstalledAppList } from '@/service/explore'
 import { AppTypeIcon } from '@/app/components/app/type-selector'
 import { useAsyncWindowOpen } from '@/hooks/use-async-window-open'
 import { useGlobalPublicStore } from '@/context/global-public-context'
-import { formatTime } from '@/utils/time'
 import { useGetUserCanAccessApp } from '@/service/access-control'
 import { basePath } from '@/utils/var'
 import dynamic from 'next/dynamic'
@@ -90,6 +90,9 @@ const AppTableRow = ({ app, onRefresh }: AppTableRowProps) => {
   const [showAccessControl, setShowAccessControl] = useState(false)
   const [secretEnvList, setSecretEnvList] = useState<EnvironmentVariable[]>([])
   const [showOperations, setShowOperations] = useState(false)
+  const [showModuleSelector, setShowModuleSelector] = useState(false)
+  const [showStatusSelector, setShowStatusSelector] = useState(false)
+  const [showCreatorSelector, setShowCreatorSelector] = useState(false)
 
   const onConfirmDelete = useCallback(async () => {
     try {
@@ -232,12 +235,12 @@ const AppTableRow = ({ app, onRefresh }: AppTableRowProps) => {
     setShowOperations(false)
   }, [])
 
-  const onClickSettings = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation()
-    e.preventDefault()
-    handleCloseOperations()
-    setShowEditModal(true)
-  }, [handleCloseOperations])
+  // const onClickSettings = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+  //   e.stopPropagation()
+  //   e.preventDefault()
+  //   handleCloseOperations()
+  //   setShowEditModal(true)
+  // }, [handleCloseOperations])
 
   const onClickDuplicate = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
@@ -300,26 +303,153 @@ const AppTableRow = ({ app, onRefresh }: AppTableRowProps) => {
     setTags(app.tags)
   }, [app.tags])
 
-  const updateTimeText = useMemo(() => {
-    return formatTime({
-      date: (app.updated_at || app.created_at) * 1000,
-      dateFormat: 'YYYY/MM/DD HH:mm',
-    })
-  }, [app.updated_at, app.created_at])
-
   const handleRowClick = (e: React.MouseEvent) => {
     e.preventDefault()
     getRedirection(isCurrentWorkspaceEditor, app, push)
   }
 
+  const moduleOptions = useMemo(() => [
+    { value: 'global', label: moduleDisplayMap.global, bgColor: 'bg-[#f4dcdce6]', textColor: 'text-[#780a0a]' },
+    { value: 'college', label: moduleDisplayMap.college, bgColor: 'bg-[#f0e0d299]', textColor: 'text-[#632903]' },
+    { value: 'major', label: moduleDisplayMap.major, bgColor: 'bg-[#efe9d3cc]', textColor: 'text-[#6b5505]' },
+    { value: 'skill', label: moduleDisplayMap.skill, bgColor: 'bg-[#d6e8ef]', textColor: 'text-[#073c68]' },
+    { value: 'career', label: moduleDisplayMap.career, bgColor: 'bg-[#d7efe2]', textColor: 'text-[#054f31]' },
+    { value: 'region', label: moduleDisplayMap.region, bgColor: 'bg-[#ebdcf44d]', textColor: 'text-[#420463]' },
+  ], [moduleDisplayMap])
+
+  const handleModuleChange = useCallback(async (newModule: string) => {
+    setShowModuleSelector(false)
+    if (newModule === app.module) return
+    try {
+      await updateAppInfo({
+        appID: app.id,
+        name: app.name,
+        icon_type: app.icon_type || 'emoji',
+        icon: app.icon,
+        icon_background: app.icon_background || undefined,
+        description: app.description,
+        module: newModule,
+        app_status: app.app_status,
+        use_icon_as_answer_icon: app.use_icon_as_answer_icon,
+        max_active_requests: app.max_active_requests ?? null,
+        created_by_name: app.author_name,
+      })
+      notify({
+        type: 'success',
+        message: t('app.editDone'),
+      })
+      if (onRefresh)
+        onRefresh()
+    }
+    catch (e: any) {
+      notify({
+        type: 'error',
+        message: e.message || t('app.editFailed'),
+      })
+    }
+  }, [app, notify, onRefresh, t])
+
+  const currentModuleOption = useMemo(() => {
+    return moduleOptions.find(opt => opt.value === app.module)
+  }, [app.module, moduleOptions])
+
+  const statusOptions = useMemo(() => [
+    { value: 'testing', label: statusDisplayMap.testing, bgColor: 'bg-[#fff5e6]', textColor: 'text-[#f29100]' },
+    { value: 'inProgress', label: statusDisplayMap.inProgress, bgColor: 'bg-[#e1f0ff]', textColor: 'text-[#2b85e4]' },
+    { value: 'completed', label: statusDisplayMap.completed, bgColor: 'bg-[#d7efe2]', textColor: 'text-[#054f31]' },
+  ], [statusDisplayMap])
+
+  const handleStatusChange = useCallback(async (newStatus: string) => {
+    setShowStatusSelector(false)
+    if (newStatus === app.app_status) return
+    try {
+      await updateAppInfo({
+        appID: app.id,
+        name: app.name,
+        icon_type: app.icon_type || 'emoji',
+        icon: app.icon,
+        icon_background: app.icon_background || undefined,
+        description: app.description,
+        module: app.module,
+        app_status: newStatus,
+        use_icon_as_answer_icon: app.use_icon_as_answer_icon,
+        max_active_requests: app.max_active_requests ?? null,
+        created_by_name: app.author_name,
+      })
+      notify({
+        type: 'success',
+        message: t('app.editDone'),
+      })
+      if (onRefresh)
+        onRefresh()
+    }
+    catch (e: any) {
+      notify({
+        type: 'error',
+        message: e.message || t('app.editFailed'),
+      })
+    }
+  }, [app, notify, onRefresh, t])
+
+  const currentStatusOption = useMemo(() => {
+    return statusOptions.find(opt => opt.value === app.app_status)
+  }, [app.app_status, statusOptions])
+
+  const creatorOptions = useMemo(() => [
+    { value: 'chen', label: 'chen', bgColor: 'bg-[#f4dcdce6]', textColor: 'text-[#780a0a]' },
+    { value: 'zing', label: 'zing', bgColor: 'bg-[#f0e0d299]', textColor: 'text-[#632903]' },
+    { value: 'erik', label: 'erik', bgColor: 'bg-[#efe9d3cc]', textColor: 'text-[#6b5505]' },
+    { value: 'flex', label: 'flex', bgColor: 'bg-[#d6e8ef]', textColor: 'text-[#073c68]' },
+    { value: 'alan', label: 'alan', bgColor: 'bg-[#d7efe2]', textColor: 'text-[#054f31]' },
+    { value: 'tony', label: 'tony', bgColor: 'bg-[#ebdcf44d]', textColor: 'text-[#420463]' },
+  ], [])
+
+  // Parse current creator names from comma-separated string
+  const currentCreatorNames = useMemo(() => {
+    if (!app.author_name) return []
+    return app.author_name.split(',').map(name => name.trim()).filter(Boolean)
+  }, [app.author_name])
+
+  const handleCreatorChange = useCallback(async (newCreators: string[]) => {
+    const newCreatorString = newCreators.join(',')
+    if (newCreatorString === app.author_name) return
+    try {
+      await updateAppInfo({
+        appID: app.id,
+        name: app.name,
+        icon_type: app.icon_type || 'emoji',
+        icon: app.icon,
+        icon_background: app.icon_background || undefined,
+        description: app.description,
+        module: app.module,
+        app_status: app.app_status,
+        use_icon_as_answer_icon: app.use_icon_as_answer_icon,
+        max_active_requests: app.max_active_requests ?? null,
+        created_by_name: newCreatorString || null,
+      })
+      notify({
+        type: 'success',
+        message: t('app.editDone'),
+      })
+      if (onRefresh)
+        onRefresh()
+    }
+    catch (e: any) {
+      notify({
+        type: 'error',
+        message: e.message || t('app.editFailed'),
+      })
+    }
+  }, [app, notify, onRefresh, t])
+
   return (
     <>
       <tr
-        onClick={handleRowClick}
-        className='group cursor-pointer border-b border-divider-subtle bg-components-panel-bg transition-colors hover:bg-background-default-hover'
+        // onClick={handleRowClick}
+        className='group border-b border-divider-subtle bg-components-panel-bg transition-colors hover:bg-background-default-hover'
       >
         {/* Title column */}
-        <td className='h-[54px] px-4 py-2'>
+        <td className='h-[72px] w-[352px] cursor-pointer px-4 py-2' onClick={handleRowClick}>
           <div className='flex items-center gap-3'>
             <div className='relative shrink-0'>
               <AppIcon
@@ -332,49 +462,158 @@ const AppTableRow = ({ app, onRefresh }: AppTableRowProps) => {
               <AppTypeIcon type={app.mode} wrapperClassName='absolute -bottom-0.5 -right-0.5 w-4 h-4 shadow-sm' className='h-3 w-3' />
             </div>
             <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
-              <p className='truncate text-sm font-medium text-text-secondary' title={app.name}>
+              <p className='truncate text-base font-medium text-[#0a0a0a]' title={app.name}>
                 {app.name}
               </p>
-              {app.description && (
-                <p className='truncate text-xs text-text-tertiary' title={app.description}>
-                  {app.description}
-                </p>
-              )}
+              <p className='truncate text-xs text-[#696f81]'>
+                {app.updated_at ? new Date(app.updated_at * 1000).toLocaleString('zh-CN', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }).replace(/\//g, '/').replace(',', '') : '-'}
+              </p>
             </div>
           </div>
         </td>
 
-        {/* Module column */}
-        <td className='h-[54px] w-[160px] px-4 py-2'>
-          <p className='truncate text-sm font-bold text-text-secondary'>
-            {app.module ? `【 ${moduleDisplayMap[app.module] || app.module} 】` : '-'}
-          </p>
+        {/* Status column */}
+        <td className='h-[72px] w-[120px] cursor-pointer px-4 py-2' onClick={e => e.stopPropagation()}>
+          {isCurrentWorkspaceEditor ? (
+            <PortalToFollowElem
+              open={showStatusSelector}
+              onOpenChange={setShowStatusSelector}
+              placement='bottom-start'
+              offset={4}
+            >
+              <PortalToFollowElemTrigger onClick={() => setShowStatusSelector(v => !v)}>
+                <div className='cursor-pointer rounded-md p-1 transition-colors hover:bg-state-base-hover'>
+                  {currentStatusOption ? (
+                    <div className={cn(
+                      'inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium',
+                      currentStatusOption.bgColor,
+                      currentStatusOption.textColor,
+                    )}>
+                      {currentStatusOption.label}
+                    </div>
+                  ) : (
+                    <div className='flex items-center gap-x-0.5 rounded-[5px] border border-dashed border-divider-deep bg-components-badge-bg-dimm px-[5px] py-[3px]'>
+                      <div className='system-2xs-medium-uppercase text-nowrap text-text-tertiary'>
+                        {t('app.selectStatus')}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </PortalToFollowElemTrigger>
+              <PortalToFollowElemContent className='z-50'>
+                <div
+                  className='w-[200px] overflow-hidden rounded-xl border border-components-panel-border bg-components-panel-bg py-1 shadow-lg'
+                  onMouseLeave={() => setShowStatusSelector(false)}
+                >
+                  {statusOptions.map(option => (
+                    <div
+                      key={option.value}
+                      className={cn(
+                        'mx-1 flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 hover:bg-state-base-hover',
+                        app.app_status === option.value && 'bg-state-base-hover',
+                      )}
+                      onClick={() => handleStatusChange(option.value)}
+                    >
+                      <div className={cn(
+                        'inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium',
+                        option.bgColor,
+                        option.textColor,
+                      )}>
+                        {option.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </PortalToFollowElemContent>
+            </PortalToFollowElem>
+          ) : (
+            currentStatusOption ? (
+              <div className={cn(
+                'inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium',
+                currentStatusOption.bgColor,
+                currentStatusOption.textColor,
+              )}>
+                {currentStatusOption.label}
+              </div>
+            ) : '-'
+          )}
         </td>
 
-        {/* Status column */}
-        <td className='h-[54px] w-[160px] px-4 py-2'>
-          {app.app_status
-            ? (
+        {/* Module column */}
+        <td className='h-[72px] w-[120px] cursor-pointer px-4 py-2' onClick={e => e.stopPropagation()}>
+          {isCurrentWorkspaceEditor ? (
+            <PortalToFollowElem
+              open={showModuleSelector}
+              onOpenChange={setShowModuleSelector}
+              placement='bottom-start'
+              offset={4}
+            >
+              <PortalToFollowElemTrigger onClick={() => setShowModuleSelector(v => !v)}>
+                <div className='cursor-pointer rounded-md p-1 transition-colors hover:bg-state-base-hover'>
+                  {currentModuleOption ? (
+                    <div className={cn(
+                      'inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium',
+                      currentModuleOption.bgColor,
+                      currentModuleOption.textColor,
+                    )}>
+                      {currentModuleOption.label}
+                    </div>
+                  ) : (
+                    <div className='flex items-center gap-x-0.5 rounded-[5px] border border-dashed border-divider-deep bg-components-badge-bg-dimm px-[5px] py-[3px]'>
+                      <div className='system-2xs-medium-uppercase text-nowrap text-text-tertiary'>
+                        {t('app.selectModule')}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </PortalToFollowElemTrigger>
+              <PortalToFollowElemContent className='z-50'>
+                <div
+                  className='w-[200px] overflow-hidden rounded-xl border border-components-panel-border bg-components-panel-bg py-1 shadow-lg'
+                  onMouseLeave={() => setShowModuleSelector(false)}
+                >
+                  {moduleOptions.map(option => (
+                    <div
+                      key={option.value}
+                      className={cn(
+                        'mx-1 flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 hover:bg-state-base-hover',
+                        app.module === option.value && 'bg-state-base-hover',
+                      )}
+                      onClick={() => handleModuleChange(option.value)}
+                    >
+                      <div className={cn(
+                        'inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium',
+                        option.bgColor,
+                        option.textColor,
+                      )}>
+                        {option.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </PortalToFollowElemContent>
+            </PortalToFollowElem>
+          ) : (
+            currentModuleOption ? (
               <div className={cn(
-                'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium',
-                app.app_status === 'inProgress' && 'bg-[#e1f0ff] text-[#2b85e4]',
-                app.app_status === 'testing' && 'bg-[#fff5e6] text-[#f29100]',
-                app.app_status === 'completed' && 'bg-[#ffebf0] text-[#e84e72]',
+                'inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium',
+                currentModuleOption.bgColor,
+                currentModuleOption.textColor,
               )}>
-                <div className={cn(
-                  'h-1.5 w-1.5 rounded-full',
-                  app.app_status === 'inProgress' && 'bg-[#2b85e4]',
-                  app.app_status === 'testing' && 'bg-[#f29100]',
-                  app.app_status === 'completed' && 'bg-[#e84e72]',
-                )} />
-                {statusDisplayMap[app.app_status] || app.app_status}
+                {currentModuleOption.label}
               </div>
-            )
-            : '-'}
+            ) : '-'
+          )}
         </td>
 
         {/* Tags column */}
-        <td className='h-[54px] w-[160px] px-4 py-2' onClick={e => e.stopPropagation()}>
+        <td className='h-[72px] w-[120px] px-4 py-2' onClick={e => e.stopPropagation()}>
           {isCurrentWorkspaceEditor
             ? (
               <TagSelector
@@ -392,7 +631,7 @@ const AppTableRow = ({ app, onRefresh }: AppTableRowProps) => {
                 {tags.slice(0, 2).map(tag => (
                   <span
                     key={tag.id}
-                    className='inline-flex items-center rounded bg-components-badge-bg-dimm px-1.5 py-1 text-xs font-medium text-text-tertiary'
+                    className='inline-flex items-center rounded border border-[#e5e5e5] bg-[#f0f0f0] px-2 py-1 text-xs font-medium text-[#0a0a0a]'
                   >
                     {tag.name}
                   </span>
@@ -407,173 +646,276 @@ const AppTableRow = ({ app, onRefresh }: AppTableRowProps) => {
         </td>
 
         {/* Creator column */}
-        <td className='h-[54px] w-[160px] px-4 py-2'>
-          <p className='truncate text-sm text-text-tertiary' title={app.author_name || '-'}>
-            {app.author_name || '-'}
-          </p>
-        </td>
-
-        {/* Update time column */}
-        <td className='h-[54px] w-[200px] px-4 py-2'>
-          <p className='text-sm text-text-tertiary'>
-            {updateTimeText}
-          </p>
-        </td>
-
-        {/* Actions column */}
-        <td className='h-[54px] w-[56px] px-4 py-2' onClick={e => e.stopPropagation()}>
-          {isCurrentWorkspaceEditor && (
+        <td className='h-[72px] w-[120px] cursor-pointer px-4 py-2' onClick={e => e.stopPropagation()}>
+          {isCurrentWorkspaceEditor ? (
             <PortalToFollowElem
-              open={showOperations}
-              onOpenChange={setShowOperations}
-              placement='bottom-end'
+              open={showCreatorSelector}
+              onOpenChange={setShowCreatorSelector}
+              placement='bottom-start'
               offset={4}
             >
-              <PortalToFollowElemTrigger onClick={() => setShowOperations(v => !v)}>
-                <div
-                  className={cn(
-                    'flex h-6 w-6 cursor-pointer items-center justify-center rounded-md transition-opacity hover:bg-state-base-hover',
-                    showOperations ? 'bg-state-base-hover opacity-100' : 'opacity-0 group-hover:opacity-100',
+              <PortalToFollowElemTrigger onClick={() => setShowCreatorSelector(v => !v)}>
+                <div className='cursor-pointer rounded-md p-1 transition-colors hover:bg-state-base-hover'>
+                  {currentCreatorNames.filter(name => creatorOptions.some(opt => opt.value === name)).length > 0 ? (
+                    <div className='flex flex-wrap gap-1'>
+                      {currentCreatorNames.filter(name => creatorOptions.some(opt => opt.value === name)).map((name) => {
+                        const option = creatorOptions.find(opt => opt.value === name)
+                        return option ? (
+                          <span
+                            key={name}
+                            className={cn(
+                              'inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium',
+                              option.bgColor,
+                              option.textColor,
+                            )}
+                          >
+                            {option.label}
+                          </span>
+                        ) : null
+                      })}
+                    </div>
+                  ) : (
+                    <span className='text-text-tertiary'>-</span>
                   )}
-                >
-                  <RiMoreFill className='h-4 w-4 text-text-tertiary' />
                 </div>
               </PortalToFollowElemTrigger>
               <PortalToFollowElemContent className='z-50'>
                 <div
-                  className={cn(
-                    'overflow-hidden rounded-xl border border-components-panel-border bg-components-panel-bg shadow-lg',
-                    (app.mode === AppModeEnum.COMPLETION || app.mode === AppModeEnum.CHAT)
-                      ? 'w-[256px]'
-                      : 'w-[216px]',
-                  )}
-                  onMouseLeave={handleCloseOperations}
+                  className='w-[200px] overflow-hidden rounded-xl border border-components-panel-border bg-components-panel-bg py-1 shadow-lg'
+                  onMouseLeave={() => setShowCreatorSelector(false)}
                 >
-                  <div className="flex w-full flex-col py-1">
-                    <button type="button" className='mx-1 flex h-8 cursor-pointer items-center gap-2 rounded-lg px-3 hover:bg-state-base-hover' onClick={onClickSettings}>
-                      <span className='system-sm-regular text-text-secondary'>{t('app.editApp')}</span>
-                    </button>
-                    <Divider className="my-1" />
-                    <button type="button" className='mx-1 flex h-8 cursor-pointer items-center gap-2 rounded-lg px-3 hover:bg-state-base-hover' onClick={onClickDuplicate}>
-                      <span className='system-sm-regular text-text-secondary'>{t('app.duplicate')}</span>
-                    </button>
-                    <button type="button" className='mx-1 flex h-8 cursor-pointer items-center gap-2 rounded-lg px-3 hover:bg-state-base-hover' onClick={onClickExport}>
-                      <span className='system-sm-regular text-text-secondary'>{t('app.export')}</span>
-                    </button>
-                    {(app.mode === AppModeEnum.COMPLETION || app.mode === AppModeEnum.CHAT) && (
-                      <>
-                        <Divider className="my-1" />
-                        <button
-                          type="button"
-                          className='mx-1 flex h-8 cursor-pointer items-center rounded-lg px-3 hover:bg-state-base-hover'
-                          onClick={onClickSwitch}
-                        >
-                          <span className='text-sm leading-5 text-text-secondary'>{t('app.switch')}</span>
-                        </button>
-                      </>
+                  {creatorOptions.map((option) => {
+                    const isSelected = currentCreatorNames.includes(option.value)
+                    return (
+                      <div
+                        key={option.value}
+                        className={cn(
+                          'mx-1 flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 hover:bg-state-base-hover',
+                          isSelected && 'bg-state-base-hover',
+                        )}
+                        onClick={() => {
+                          const newCreators = isSelected
+                            ? currentCreatorNames.filter(name => name !== option.value)
+                            : [...currentCreatorNames, option.value]
+                          handleCreatorChange(newCreators)
+                        }}
+                      >
+                        <div className={cn(
+                          'inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium',
+                          option.bgColor,
+                          option.textColor,
+                        )}>
+                          {option.label}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </PortalToFollowElemContent>
+            </PortalToFollowElem>
+          ) : (
+            currentCreatorNames.filter(name => creatorOptions.some(opt => opt.value === name)).length > 0 ? (
+              <div className='flex flex-wrap gap-1'>
+                {currentCreatorNames.filter(name => creatorOptions.some(opt => opt.value === name)).map((name) => {
+                  const option = creatorOptions.find(opt => opt.value === name)
+                  return option ? (
+                    <span
+                      key={name}
+                      className={cn(
+                        'inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium',
+                        option.bgColor,
+                        option.textColor,
+                      )}
+                    >
+                      {option.label}
+                    </span>
+                  ) : null
+                })}
+              </div>
+            ) : '-'
+          )}
+        </td>
+
+        {/* Description column */}
+        <td className='h-[72px] w-[280px] px-4 py-2'>
+          {app.description
+            ? (
+              <p className='line-clamp-2 text-sm text-[#737373]' title={app.description}>
+                {app.description}
+              </p>
+            )
+            : <span className='text-[#737373]'>-</span>}
+        </td>
+
+        {/* Actions column */}
+        <td className='h-[72px] w-[88px] px-4 py-2' onClick={e => e.stopPropagation()}>
+          {isCurrentWorkspaceEditor && (
+            <div className='flex items-center gap-6'>
+              {/* Edit icon */}
+              <div
+                className='flex h-6 w-6 cursor-pointer items-center justify-center rounded-md hover:bg-state-base-hover'
+                onClick={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  setShowEditModal(true)
+                }}
+              >
+                <RiEditLine className='h-4 w-4 text-[#696F81]' />
+              </div>
+              {/* More options */}
+              <PortalToFollowElem
+                open={showOperations}
+                onOpenChange={setShowOperations}
+                placement='bottom-end'
+                offset={4}
+              >
+                <PortalToFollowElemTrigger onClick={() => setShowOperations(v => !v)}>
+                  <div
+                    className={cn(
+                      'flex h-6 w-6 cursor-pointer items-center justify-center rounded-md hover:bg-state-base-hover',
+                      showOperations && 'bg-state-base-hover',
                     )}
-                    {
-                      !app.has_draft_trigger && (
-                        (!systemFeatures.webapp_auth.enabled)
-                          ? <>
-                            <Divider className="my-1" />
-                            <button type="button" className='mx-1 flex h-8 cursor-pointer items-center gap-2 rounded-lg px-3 hover:bg-state-base-hover' onClick={onClickInstalledApp}>
-                              <span className='system-sm-regular text-text-secondary'>{t('app.openInExplore')}</span>
-                            </button>
-                          </>
-                          : !(isGettingUserCanAccessApp || !userCanAccessApp?.result) && (
-                            <>
+                  >
+                    <RiMoreFill className='h-4 w-4 text-[#696F81]' />
+                  </div>
+                </PortalToFollowElemTrigger>
+                <PortalToFollowElemContent className='z-50'>
+                  <div
+                    className={cn(
+                      'overflow-hidden rounded-xl border border-components-panel-border bg-components-panel-bg shadow-lg',
+                      (app.mode === AppModeEnum.COMPLETION || app.mode === AppModeEnum.CHAT)
+                        ? 'w-[256px]'
+                        : 'w-[216px]',
+                    )}
+                    onMouseLeave={handleCloseOperations}
+                  >
+                    <div className="flex w-full flex-col py-1">
+                      <button type="button" className='mx-1 flex h-8 cursor-pointer items-center gap-2 rounded-lg px-3 hover:bg-state-base-hover' onClick={onClickDuplicate}>
+                        <span className='system-sm-regular text-text-secondary'>{t('app.duplicate')}</span>
+                      </button>
+                      <button type="button" className='mx-1 flex h-8 cursor-pointer items-center gap-2 rounded-lg px-3 hover:bg-state-base-hover' onClick={onClickExport}>
+                        <span className='system-sm-regular text-text-secondary'>{t('app.export')}</span>
+                      </button>
+                      {(app.mode === AppModeEnum.COMPLETION || app.mode === AppModeEnum.CHAT) && (
+                        <>
+                          <Divider className="my-1" />
+                          <button
+                            type="button"
+                            className='mx-1 flex h-8 cursor-pointer items-center rounded-lg px-3 hover:bg-state-base-hover'
+                            onClick={onClickSwitch}
+                          >
+                            <span className='text-sm leading-5 text-text-secondary'>{t('app.switch')}</span>
+                          </button>
+                        </>
+                      )}
+                      {
+                        !app.has_draft_trigger && (
+                          (!systemFeatures.webapp_auth.enabled)
+                            ? <>
                               <Divider className="my-1" />
                               <button type="button" className='mx-1 flex h-8 cursor-pointer items-center gap-2 rounded-lg px-3 hover:bg-state-base-hover' onClick={onClickInstalledApp}>
                                 <span className='system-sm-regular text-text-secondary'>{t('app.openInExplore')}</span>
                               </button>
                             </>
-                          )
-                      )
-                    }
-                    <Divider className="my-1" />
-                    {
-                      systemFeatures.webapp_auth.enabled && isCurrentWorkspaceEditor && <>
-                        <button type="button" className='mx-1 flex h-8 cursor-pointer items-center rounded-lg px-3 hover:bg-state-base-hover' onClick={onClickAccessControl}>
-                          <span className='text-sm leading-5 text-text-secondary'>{t('app.accessControl')}</span>
-                        </button>
-                        <Divider className='my-1' />
-                      </>
-                    }
-                    <button
-                      type="button"
-                      className='group mx-1 flex h-8 cursor-pointer items-center gap-2 rounded-lg px-3 py-[6px] hover:bg-state-destructive-hover'
-                      onClick={onClickDelete}
-                    >
-                      <span className='system-sm-regular text-text-secondary group-hover:text-text-destructive'>
-                        {t('common.operation.delete')}
-                      </span>
-                    </button>
+                            : !(isGettingUserCanAccessApp || !userCanAccessApp?.result) && (
+                              <>
+                                <Divider className="my-1" />
+                                <button type="button" className='mx-1 flex h-8 cursor-pointer items-center gap-2 rounded-lg px-3 hover:bg-state-base-hover' onClick={onClickInstalledApp}>
+                                  <span className='system-sm-regular text-text-secondary'>{t('app.openInExplore')}</span>
+                                </button>
+                              </>
+                            )
+                        )
+                      }
+                      <Divider className="my-1" />
+                      {
+                        systemFeatures.webapp_auth.enabled && isCurrentWorkspaceEditor && <>
+                          <button type="button" className='mx-1 flex h-8 cursor-pointer items-center rounded-lg px-3 hover:bg-state-base-hover' onClick={onClickAccessControl}>
+                            <span className='text-sm leading-5 text-text-secondary'>{t('app.accessControl')}</span>
+                          </button>
+                          <Divider className='my-1' />
+                        </>
+                      }
+                      <button
+                        type="button"
+                        className='group mx-1 flex h-8 cursor-pointer items-center gap-2 rounded-lg px-3 py-[6px] hover:bg-state-destructive-hover'
+                        onClick={onClickDelete}
+                      >
+                        <span className='system-sm-regular text-text-secondary group-hover:text-text-destructive'>
+                          {t('common.operation.delete')}
+                        </span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </PortalToFollowElemContent>
-            </PortalToFollowElem>
+                </PortalToFollowElemContent>
+              </PortalToFollowElem>
+            </div>
           )}
         </td>
       </tr>
-      {showEditModal && (
-        <EditAppModal
-          isEditModal
-          appName={app.name}
-          appIconType={app.icon_type}
-          appIcon={app.icon}
-          appIconBackground={app.icon_background}
-          appIconUrl={app.icon_url}
-          appDescription={app.description}
-          appModule={app.module}
-          appStatus={app.app_status}
-          appMode={app.mode}
-          appUseIconAsAnswerIcon={app.use_icon_as_answer_icon}
-          appCreatorName={app.author_name}
-          max_active_requests={app.max_active_requests ?? null}
-          show={showEditModal}
-          onConfirm={onEdit}
-          onHide={() => setShowEditModal(false)}
-        />
-      )}
-      {showDuplicateModal && (
-        <DuplicateAppModal
-          appName={app.name}
-          icon_type={app.icon_type}
-          icon={app.icon}
-          icon_background={app.icon_background}
-          icon_url={app.icon_url}
-          show={showDuplicateModal}
-          onConfirm={onCopy}
-          onHide={() => setShowDuplicateModal(false)}
-        />
-      )}
-      {showSwitchModal && (
-        <SwitchAppModal
-          show={showSwitchModal}
-          appDetail={app}
-          onClose={() => setShowSwitchModal(false)}
-          onSuccess={onSwitch}
-        />
-      )}
-      {showConfirmDelete && (
-        <Confirm
-          title={t('app.deleteAppConfirmTitle')}
-          content={t('app.deleteAppConfirmContent')}
-          isShow={showConfirmDelete}
-          onConfirm={onConfirmDelete}
-          onCancel={() => setShowConfirmDelete(false)}
-        />
-      )}
-      {secretEnvList.length > 0 && (
-        <DSLExportConfirmModal
-          envList={secretEnvList}
-          onConfirm={onExport}
-          onClose={() => setSecretEnvList([])}
-        />
-      )}
-      {showAccessControl && (
-        <AccessControl app={app} onConfirm={onUpdateAccessControl} onClose={() => setShowAccessControl(false)} />
+      {typeof document !== 'undefined' && createPortal(
+        <>
+          {showEditModal && (
+            <EditAppModal
+              isEditModal
+              appName={app.name}
+              appIconType={app.icon_type}
+              appIcon={app.icon}
+              appIconBackground={app.icon_background}
+              appIconUrl={app.icon_url}
+              appDescription={app.description}
+              appModule={app.module}
+              appStatus={app.app_status}
+              appMode={app.mode}
+              appUseIconAsAnswerIcon={app.use_icon_as_answer_icon}
+              appCreatorName={app.author_name}
+              max_active_requests={app.max_active_requests ?? null}
+              show={showEditModal}
+              onConfirm={onEdit}
+              onHide={() => setShowEditModal(false)}
+            />
+          )}
+          {showDuplicateModal && (
+            <DuplicateAppModal
+              appName={app.name}
+              icon_type={app.icon_type}
+              icon={app.icon}
+              icon_background={app.icon_background}
+              icon_url={app.icon_url}
+              show={showDuplicateModal}
+              onConfirm={onCopy}
+              onHide={() => setShowDuplicateModal(false)}
+            />
+          )}
+          {showSwitchModal && (
+            <SwitchAppModal
+              show={showSwitchModal}
+              appDetail={app}
+              onClose={() => setShowSwitchModal(false)}
+              onSuccess={onSwitch}
+            />
+          )}
+          {showConfirmDelete && (
+            <Confirm
+              title={t('app.deleteAppConfirmTitle')}
+              content={t('app.deleteAppConfirmContent')}
+              isShow={showConfirmDelete}
+              onConfirm={onConfirmDelete}
+              onCancel={() => setShowConfirmDelete(false)}
+            />
+          )}
+          {secretEnvList.length > 0 && (
+            <DSLExportConfirmModal
+              envList={secretEnvList}
+              onConfirm={onExport}
+              onClose={() => setSecretEnvList([])}
+            />
+          )}
+          {showAccessControl && (
+            <AccessControl app={app} onConfirm={onUpdateAccessControl} onClose={() => setShowAccessControl(false)} />
+          )}
+        </>,
+        document.body,
       )}
     </>
   )
@@ -586,39 +928,192 @@ export type AppTableViewProps = {
 
 const AppTableView = ({ apps, onRefresh }: AppTableViewProps) => {
   const { t } = useTranslation()
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [showPageSizeSelector, setShowPageSizeSelector] = useState(false)
+
+  const pageSizeOptions = [10, 20, 50, 100]
+  const totalItems = apps.length
+  const totalPages = Math.ceil(totalItems / pageSize)
+
+  // Calculate the current page's apps
+  const paginatedApps = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize
+    const endIndex = startIndex + pageSize
+    return apps.slice(startIndex, endIndex)
+  }, [apps, currentPage, pageSize])
+
+  // Reset to first page when apps change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [apps.length])
+
+  // Handle page size change
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
+    setPageSize(newPageSize)
+    setCurrentPage(1)
+    setShowPageSizeSelector(false)
+  }, [])
+
+  // Navigation handlers
+  const goToFirstPage = useCallback(() => setCurrentPage(1), [])
+  const goToPreviousPage = useCallback(() => setCurrentPage(prev => Math.max(1, prev - 1)), [])
+  const goToNextPage = useCallback(() => setCurrentPage(prev => Math.min(totalPages, prev + 1)), [totalPages])
+  const goToLastPage = useCallback(() => setCurrentPage(totalPages), [totalPages])
 
   return (
-    <div className='w-full overflow-x-auto'>
-      <table className='w-full min-w-[800px] border-collapse'>
-        <thead>
-          <tr className='h-10 border-b border-divider-subtle'>
-            <th className='px-4 text-left text-sm font-normal text-text-tertiary'>
-              {t('app.table.title')}
-            </th>
-            <th className='w-[160px] px-4 text-left text-sm font-normal text-text-tertiary'>
-              {t('app.table.module')}
-            </th>
-            <th className='w-[160px] px-4 text-left text-sm font-normal text-text-tertiary'>
-              {t('app.table.status')}
-            </th>
-            <th className='w-[160px] px-4 text-left text-sm font-normal text-text-tertiary'>
-              {t('app.table.tags')}
-            </th>
-            <th className='w-[160px] px-4 text-left text-sm font-normal text-text-tertiary'>
-              {t('app.table.creator')}
-            </th>
-            <th className='w-[200px] px-4 text-left text-sm font-normal text-text-tertiary'>
-              {t('app.table.updateTime')}
-            </th>
-            <th className='w-[56px] px-4'></th>
-          </tr>
-        </thead>
-        <tbody>
-          {apps.map(app => (
-            <AppTableRow key={app.id} app={app} onRefresh={onRefresh} />
-          ))}
-        </tbody>
-      </table>
+    <div className='flex min-h-0 flex-1 flex-col'>
+      <div className='min-h-0 w-full flex-1 overflow-auto'>
+        <table className='w-full min-w-[1112px] border-collapse'>
+          <thead className='sticky top-0 z-10'>
+            <tr className='h-10 border-b border-divider-subtle bg-[#f5f5f5]'>
+              <th className='w-[352px] px-4 text-left text-sm font-normal text-[#737373]'>
+                {t('app.table.title')}
+              </th>
+              <th className='w-[120px] px-4 text-left text-sm font-normal text-[#737373]'>
+                {t('app.table.status')}
+              </th>
+              <th className='w-[120px] px-4 text-left text-sm font-normal text-[#737373]'>
+                {t('app.table.module')}
+              </th>
+              <th className='w-[120px] px-4 text-left text-sm font-normal text-[#737373]'>
+                {t('app.table.tags')}
+              </th>
+              <th className='w-[120px] px-4 text-left text-sm font-normal text-[#737373]'>
+                {t('app.table.creator')}
+              </th>
+              <th className='w-[280px] px-4 text-left text-sm font-normal text-[#737373]'>
+                {t('app.newApp.captionDescription')}
+              </th>
+              <th className='w-[88px] px-4 text-left text-sm font-normal text-[#737373]'>
+                {t('app.table.actions')}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedApps.map(app => (
+              <AppTableRow key={app.id} app={app} onRefresh={onRefresh} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      <div className='flex items-center justify-end border-t border-divider-subtle px-4 py-3'>
+        {/* Rows per page and Page info and navigation */}
+        <div className='flex items-center gap-4'>
+          {/* Rows per page */}
+          <div className='flex items-center gap-2'>
+            <span className='text-sm font-medium text-[#0a0a0a]'>
+              {t('common.pagination.rowsPerPage')}
+            </span>
+            <PortalToFollowElem
+              open={showPageSizeSelector}
+              onOpenChange={setShowPageSizeSelector}
+              placement='bottom-start'
+              offset={4}
+            >
+              <PortalToFollowElemTrigger onClick={() => setShowPageSizeSelector(v => !v)}>
+                <div className='flex h-9 w-20 cursor-pointer items-center justify-between rounded-lg border border-[#e5e5e5] bg-white px-4 py-2 shadow-xs hover:border-[#d4d4d4]'>
+                  <span className='text-sm text-[#0a0a0a]'>{pageSize}</span>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 6L8 10L12 6" stroke="#737373" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </PortalToFollowElemTrigger>
+              <PortalToFollowElemContent className='z-50'>
+                <div
+                  className='w-20 overflow-hidden rounded-lg border border-[#e5e5e5] bg-white py-1 shadow-lg'
+                  onMouseLeave={() => setShowPageSizeSelector(false)}
+                >
+                  {pageSizeOptions.map(option => (
+                    <div
+                      key={option}
+                      className={cn(
+                        'cursor-pointer px-4 py-2 text-sm hover:bg-[#f5f5f5]',
+                        pageSize === option ? 'bg-[#f5f5f5] text-[#0a0a0a]' : 'text-[#737373]',
+                      )}
+                      onClick={() => handlePageSizeChange(option)}
+                    >
+                      {option}
+                    </div>
+                  ))}
+                </div>
+              </PortalToFollowElemContent>
+            </PortalToFollowElem>
+          </div>
+
+          {/* Page info */}
+          <span className='text-sm text-[#0a0a0a]'>
+            {t('common.pagination.page')} {currentPage} {t('common.pagination.of')} {totalPages}
+          </span>
+
+          {/* Navigation buttons */}
+          <div className='flex items-center gap-1'>
+            {/* First page */}
+            <button
+              type='button'
+              className={cn(
+                'flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e5e5] bg-white shadow-xs',
+                currentPage === 1 ? 'cursor-not-allowed opacity-50' : 'hover:bg-[#f5f5f5]',
+              )}
+              onClick={goToFirstPage}
+              disabled={currentPage === 1}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 12L7 8L11 4" stroke="#737373" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M6 12L6 4" stroke="#737373" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {/* Previous page */}
+            <button
+              type='button'
+              className={cn(
+                'flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e5e5] bg-white shadow-xs',
+                currentPage === 1 ? 'cursor-not-allowed opacity-50' : 'hover:bg-[#f5f5f5]',
+              )}
+              onClick={goToPreviousPage}
+              disabled={currentPage === 1}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 12L6 8L10 4" stroke="#737373" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {/* Next page */}
+            <button
+              type='button'
+              className={cn(
+                'flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e5e5] bg-white shadow-xs',
+                currentPage === totalPages ? 'cursor-not-allowed opacity-50' : 'hover:bg-[#f5f5f5]',
+              )}
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 12L10 8L6 4" stroke="#737373" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {/* Last page */}
+            <button
+              type='button'
+              className={cn(
+                'flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e5e5] bg-white shadow-xs',
+                currentPage === totalPages ? 'cursor-not-allowed opacity-50' : 'hover:bg-[#f5f5f5]',
+              )}
+              onClick={goToLastPage}
+              disabled={currentPage === totalPages}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12L9 8L5 4" stroke="#737373" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M10 12L10 4" stroke="#737373" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

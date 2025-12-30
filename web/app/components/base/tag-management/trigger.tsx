@@ -1,4 +1,3 @@
-import { RiPriceTag3Line } from '@remixicon/react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -14,9 +13,8 @@ const Trigger = ({
   return (
     <div className='flex w-full cursor-pointer items-center gap-1 overflow-hidden rounded-lg p-1 hover:bg-state-base-hover'>
       {!tags.length ? (
-        <div className='flex items-center gap-x-0.5 rounded-[5px] border border-dashed border-divider-deep bg-components-badge-bg-dimm px-[5px] py-[3px]'>
-          <RiPriceTag3Line className='h-3 w-3 shrink-0 text-text-quaternary' />
-          <div className='system-2xs-medium-uppercase text-nowrap text-text-tertiary'>
+        <div className='flex items-center gap-1 rounded border border-[#e5e5e5] bg-[#f0f0f0] px-2 py-1 text-xs font-medium text-[#0a0a0a]'>
+          <div className='text-nowrap'>
             {t('common.tag.addTag')}
           </div>
         </div>
@@ -27,10 +25,9 @@ const Trigger = ({
               return (
                 <div
                   key={index}
-                  className='flex items-center gap-x-0.5 rounded-[5px] border border-divider-deep bg-components-badge-bg-dimm px-[5px] py-[3px]'
+                  className='flex items-center gap-1 rounded border border-[#e5e5e5] bg-[#f0f0f0] px-2 py-1 text-xs font-medium text-[#0a0a0a]'
                 >
-                  <RiPriceTag3Line className='h-3 w-3 shrink-0 text-text-quaternary' />
-                  <div className='system-2xs-medium-uppercase text-nowrap text-text-tertiary'>
+                  <div className='text-nowrap'>
                     {content}
                   </div>
                 </div>
