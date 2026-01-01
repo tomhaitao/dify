@@ -25,7 +25,7 @@ import TagSelector from '@/app/components/base/tag-management/selector'
 import type { EnvironmentVariable } from '@/app/components/workflow/types'
 import { fetchWorkflowDraft } from '@/service/workflow'
 import { fetchInstalledAppList } from '@/service/explore'
-import { AppTypeIcon } from '@/app/components/app/type-selector'
+// import { AppTypeIcon } from '@/app/components/app/type-selector'
 import Tooltip from '@/app/components/base/tooltip'
 import { useAsyncWindowOpen } from '@/hooks/use-async-window-open'
 import { AccessMode } from '@/models/access-control'
@@ -83,9 +83,10 @@ const AppCard = ({ app, onRefresh }: AppCardProps) => {
       onPlanInfoChanged()
     }
     catch (e: any) {
+      const errorSuffix = 'message' in e ? `: ${e.message}` : ''
       notify({
         type: 'error',
-        message: `${t('app.appDeleteFailed')}${'message' in e ? `: ${e.message}` : ''}`,
+        message: `${t('app.appDeleteFailed')}${errorSuffix}`,
       })
     }
     setShowConfirmDelete(false)
@@ -358,10 +359,10 @@ const AppCard = ({ app, onRefresh }: AppCardProps) => {
   const EditTimeText = useMemo(() => {
     const timeText = formatTime({
       date: (app.updated_at || app.created_at) * 1000,
-      dateFormat: `${t('datasetDocuments.segment.dateTimeFormat')}`,
+      dateFormat: t('datasetDocuments.segment.dateTimeFormat'),
     })
     return `${t('datasetDocuments.segment.editedAt')} ${timeText}`
-  }, [app.updated_at, app.created_at])
+  }, [app.updated_at, app.created_at, t])
 
   return (
     <>
@@ -370,7 +371,7 @@ const AppCard = ({ app, onRefresh }: AppCardProps) => {
           e.preventDefault()
           getRedirection(isCurrentWorkspaceEditor, app, push)
         }}
-        className='group relative col-span-1 inline-flex h-[160px] cursor-pointer flex-col rounded-xl border-[1px] border-solid border-components-card-border bg-components-card-bg shadow-sm transition-all duration-200 ease-in-out hover:shadow-lg'
+        className='group relative col-span-1 inline-flex h-[160px] cursor-pointer flex-col rounded-xl border-[1px] border-solid border-[#E5E5E5] bg-components-card-bg transition-all duration-200 ease-in-out hover:shadow-lg'
       >
         <div className='flex h-[66px] shrink-0 grow-0 items-center gap-3 px-[14px] pb-3 pt-[14px]'>
           <div className='relative shrink-0'>
@@ -381,7 +382,7 @@ const AppCard = ({ app, onRefresh }: AppCardProps) => {
               background={app.icon_background}
               imageUrl={app.icon_url}
             />
-            <AppTypeIcon type={app.mode} wrapperClassName='absolute -bottom-0.5 -right-0.5 w-4 h-4 shadow-sm' className='h-3 w-3' />
+            {/* <AppTypeIcon type={app.mode} wrapperClassName='absolute -bottom-0.5 -right-0.5 w-4 h-4 shadow-sm' className='h-3 w-3' /> */}
           </div>
           <div className='w-0 grow py-[1px]'>
             <div className='flex items-center text-sm font-semibold leading-5 text-text-secondary'>
@@ -434,23 +435,31 @@ const AppCard = ({ app, onRefresh }: AppCardProps) => {
                     onChange={onRefresh}
                   />
                   {app.module && (
-                    <div className='shrink-0 truncate text-[10px] font-bold text-text-secondary' title={moduleDisplayMap[app.module]}>
-                      {`【 ${moduleDisplayMap[app.module] || app.module} 】`}
+                    <div className={cn(
+                      'inline-flex shrink-0 items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium',
+                      app.module === 'global' && 'bg-[#f4dcdce6] text-[#780a0a]',
+                      app.module === 'college' && 'bg-[#f0e0d299] text-[#632903]',
+                      app.module === 'major' && 'bg-[#efe9d3cc] text-[#6b5505]',
+                      app.module === 'skill' && 'bg-[#d6e8ef] text-[#073c68]',
+                      app.module === 'career' && 'bg-[#d7efe2] text-[#054f31]',
+                      app.module === 'region' && 'bg-[#ebdcf44d] text-[#420463]',
+                    )} title={moduleDisplayMap[app.module]}>
+                      {moduleDisplayMap[app.module] || app.module}
                     </div>
                   )}
                   {app.app_status && (
                     <div className={cn(
-                      'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
+                      'inline-flex shrink-0 items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium',
                       app.app_status === 'inProgress' && 'bg-[#e1f0ff] text-[#2b85e4]',
                       app.app_status === 'testing' && 'bg-[#fff5e6] text-[#f29100]',
-                      app.app_status === 'completed' && 'bg-[#ffebf0] text-[#e84e72]',
+                      app.app_status === 'completed' && 'bg-[#d7efe2] text-[#054f31]',
                     )}>
-                      <div className={cn(
-                        'h-1 w-1 rounded-full',
-                        app.app_status === 'inProgress' && 'bg-[#2b85e4]',
-                        app.app_status === 'testing' && 'bg-[#f29100]',
-                        app.app_status === 'completed' && 'bg-[#e84e72]',
-                      )} />
+                      {/* <div className={cn( */}
+                      {/*  'h-1.5 w-1.5 rounded-full', */}
+                      {/*  app.app_status === 'inProgress' && 'bg-[#2b85e4]', */}
+                      {/*  app.app_status === 'testing' && 'bg-[#f29100]', */}
+                      {/*  app.app_status === 'completed' && 'bg-[#054f31]', */}
+                      {/* )} /> */}
                       {statusDisplayMap[app.app_status] || app.app_status}
                     </div>
                   )}

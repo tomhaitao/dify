@@ -44,12 +44,12 @@ const QuickCreate = ({
   }, [dslUrl])
 
   return (
-    <div className="flex flex-col gap-3 px-8 pb-5 pt-7">
-      <div className="flex items-center px-1">
+    <div className="flex flex-col gap-1 px-8 pb-4 pt-4">
+      {/* <div className="flex items-center px-1">
         <span className="text-sm font-medium text-text-secondary">
           {t('app.quickCreate.title')}
         </span>
-      </div>
+      </div> */}
       <div className="flex items-center gap-4">
         {/* 创建空白应用 - 紫色系 */}
         <button

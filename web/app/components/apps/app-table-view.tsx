@@ -28,7 +28,7 @@ import TagSelector from '@/app/components/base/tag-management/selector'
 import type { EnvironmentVariable } from '@/app/components/workflow/types'
 import { fetchWorkflowDraft } from '@/service/workflow'
 import { fetchInstalledAppList } from '@/service/explore'
-import { AppTypeIcon } from '@/app/components/app/type-selector'
+// import { AppTypeIcon } from '@/app/components/app/type-selector'
 import { useAsyncWindowOpen } from '@/hooks/use-async-window-open'
 import { useGlobalPublicStore } from '@/context/global-public-context'
 import { useGetUserCanAccessApp } from '@/service/access-control'
@@ -103,9 +103,10 @@ const AppTableRow = ({ app, onRefresh }: AppTableRowProps) => {
       onPlanInfoChanged()
     }
     catch (e: any) {
+      const errorSuffix = 'message' in e ? `: ${e.message}` : ''
       notify({
         type: 'error',
-        message: `${t('app.appDeleteFailed')}${'message' in e ? `: ${e.message}` : ''}`,
+        message: `${t('app.appDeleteFailed')}${errorSuffix}`,
       })
     }
     setShowConfirmDelete(false)
@@ -234,13 +235,6 @@ const AppTableRow = ({ app, onRefresh }: AppTableRowProps) => {
   const handleCloseOperations = useCallback(() => {
     setShowOperations(false)
   }, [])
-
-  // const onClickSettings = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-  //   e.stopPropagation()
-  //   e.preventDefault()
-  //   handleCloseOperations()
-  //   setShowEditModal(true)
-  // }, [handleCloseOperations])
 
   const onClickDuplicate = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
@@ -459,10 +453,10 @@ const AppTableRow = ({ app, onRefresh }: AppTableRowProps) => {
                 background={app.icon_background}
                 imageUrl={app.icon_url}
               />
-              <AppTypeIcon type={app.mode} wrapperClassName='absolute -bottom-0.5 -right-0.5 w-4 h-4 shadow-sm' className='h-3 w-3' />
+              {/* <AppTypeIcon type={app.mode} wrapperClassName='absolute -bottom-0.5 -right-0.5 w-4 h-4 shadow-sm' className='h-3 w-3' /> */}
             </div>
             <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
-              <p className='truncate text-base font-medium text-[#0a0a0a]' title={app.name}>
+              <p className='truncate text-sm font-medium text-[#0a0a0a]' title={app.name}>
                 {app.name}
               </p>
               <p className='truncate text-xs text-[#696f81]'>
@@ -533,15 +527,17 @@ const AppTableRow = ({ app, onRefresh }: AppTableRowProps) => {
               </PortalToFollowElemContent>
             </PortalToFollowElem>
           ) : (
-            currentStatusOption ? (
-              <div className={cn(
-                'inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium',
-                currentStatusOption.bgColor,
-                currentStatusOption.textColor,
-              )}>
-                {currentStatusOption.label}
-              </div>
-            ) : '-'
+            currentStatusOption
+              ? (
+                <div className={cn(
+                  'inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium',
+                  currentStatusOption.bgColor,
+                  currentStatusOption.textColor,
+                )}>
+                  {currentStatusOption.label}
+                </div>
+              )
+              : '-'
           )}
         </td>
 
@@ -600,15 +596,17 @@ const AppTableRow = ({ app, onRefresh }: AppTableRowProps) => {
               </PortalToFollowElemContent>
             </PortalToFollowElem>
           ) : (
-            currentModuleOption ? (
-              <div className={cn(
-                'inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium',
-                currentModuleOption.bgColor,
-                currentModuleOption.textColor,
-              )}>
-                {currentModuleOption.label}
-              </div>
-            ) : '-'
+            currentModuleOption
+              ? (
+                <div className={cn(
+                  'inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium',
+                  currentModuleOption.bgColor,
+                  currentModuleOption.textColor,
+                )}>
+                  {currentModuleOption.label}
+                </div>
+              )
+              : '-'
           )}
         </td>
 
@@ -714,25 +712,27 @@ const AppTableRow = ({ app, onRefresh }: AppTableRowProps) => {
               </PortalToFollowElemContent>
             </PortalToFollowElem>
           ) : (
-            currentCreatorNames.filter(name => creatorOptions.some(opt => opt.value === name)).length > 0 ? (
-              <div className='flex flex-wrap gap-1'>
-                {currentCreatorNames.filter(name => creatorOptions.some(opt => opt.value === name)).map((name) => {
-                  const option = creatorOptions.find(opt => opt.value === name)
-                  return option ? (
-                    <span
-                      key={name}
-                      className={cn(
-                        'inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium',
-                        option.bgColor,
-                        option.textColor,
-                      )}
-                    >
-                      {option.label}
-                    </span>
-                  ) : null
-                })}
-              </div>
-            ) : '-'
+            currentCreatorNames.filter(name => creatorOptions.some(opt => opt.value === name)).length > 0
+              ? (
+                <div className='flex flex-wrap gap-1'>
+                  {currentCreatorNames.filter(name => creatorOptions.some(opt => opt.value === name)).map((name) => {
+                    const option = creatorOptions.find(opt => opt.value === name)
+                    return option ? (
+                      <span
+                        key={name}
+                        className={cn(
+                          'inline-flex items-center rounded-sm px-2 py-1 text-xs font-medium',
+                          option.bgColor,
+                          option.textColor,
+                        )}
+                      >
+                        {option.label}
+                      </span>
+                    ) : null
+                  })}
+                </div>
+              )
+              : '-'
           )}
         </td>
 
@@ -928,38 +928,6 @@ export type AppTableViewProps = {
 
 const AppTableView = ({ apps, onRefresh }: AppTableViewProps) => {
   const { t } = useTranslation()
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
-  const [showPageSizeSelector, setShowPageSizeSelector] = useState(false)
-
-  const pageSizeOptions = [10, 20, 50, 100]
-  const totalItems = apps.length
-  const totalPages = Math.ceil(totalItems / pageSize)
-
-  // Calculate the current page's apps
-  const paginatedApps = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize
-    const endIndex = startIndex + pageSize
-    return apps.slice(startIndex, endIndex)
-  }, [apps, currentPage, pageSize])
-
-  // Reset to first page when apps change
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [apps.length])
-
-  // Handle page size change
-  const handlePageSizeChange = useCallback((newPageSize: number) => {
-    setPageSize(newPageSize)
-    setCurrentPage(1)
-    setShowPageSizeSelector(false)
-  }, [])
-
-  // Navigation handlers
-  const goToFirstPage = useCallback(() => setCurrentPage(1), [])
-  const goToPreviousPage = useCallback(() => setCurrentPage(prev => Math.max(1, prev - 1)), [])
-  const goToNextPage = useCallback(() => setCurrentPage(prev => Math.min(totalPages, prev + 1)), [totalPages])
-  const goToLastPage = useCallback(() => setCurrentPage(totalPages), [totalPages])
 
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
@@ -967,7 +935,7 @@ const AppTableView = ({ apps, onRefresh }: AppTableViewProps) => {
         <table className='w-full min-w-[1112px] border-collapse'>
           <thead className='sticky top-0 z-10'>
             <tr className='h-10 border-b border-divider-subtle bg-[#f5f5f5]'>
-              <th className='w-[352px] px-4 text-left text-sm font-normal text-[#737373]'>
+              <th className='w-[280px] px-4 text-left text-sm font-normal text-[#737373]'>
                 {t('app.table.title')}
               </th>
               <th className='w-[120px] px-4 text-left text-sm font-normal text-[#737373]'>
@@ -982,7 +950,7 @@ const AppTableView = ({ apps, onRefresh }: AppTableViewProps) => {
               <th className='w-[120px] px-4 text-left text-sm font-normal text-[#737373]'>
                 {t('app.table.creator')}
               </th>
-              <th className='w-[280px] px-4 text-left text-sm font-normal text-[#737373]'>
+              <th className='w-[360px] px-4 text-left text-sm font-normal text-[#737373]'>
                 {t('app.newApp.captionDescription')}
               </th>
               <th className='w-[88px] px-4 text-left text-sm font-normal text-[#737373]'>
@@ -991,128 +959,11 @@ const AppTableView = ({ apps, onRefresh }: AppTableViewProps) => {
             </tr>
           </thead>
           <tbody>
-            {paginatedApps.map(app => (
+            {apps.map(app => (
               <AppTableRow key={app.id} app={app} onRefresh={onRefresh} />
             ))}
           </tbody>
         </table>
-      </div>
-
-      {/* Pagination */}
-      <div className='flex items-center justify-end border-t border-divider-subtle px-4 py-3'>
-        {/* Rows per page and Page info and navigation */}
-        <div className='flex items-center gap-4'>
-          {/* Rows per page */}
-          <div className='flex items-center gap-2'>
-            <span className='text-sm font-medium text-[#0a0a0a]'>
-              {t('common.pagination.rowsPerPage')}
-            </span>
-            <PortalToFollowElem
-              open={showPageSizeSelector}
-              onOpenChange={setShowPageSizeSelector}
-              placement='bottom-start'
-              offset={4}
-            >
-              <PortalToFollowElemTrigger onClick={() => setShowPageSizeSelector(v => !v)}>
-                <div className='flex h-9 w-20 cursor-pointer items-center justify-between rounded-lg border border-[#e5e5e5] bg-white px-4 py-2 shadow-xs hover:border-[#d4d4d4]'>
-                  <span className='text-sm text-[#0a0a0a]'>{pageSize}</span>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M4 6L8 10L12 6" stroke="#737373" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-              </PortalToFollowElemTrigger>
-              <PortalToFollowElemContent className='z-50'>
-                <div
-                  className='w-20 overflow-hidden rounded-lg border border-[#e5e5e5] bg-white py-1 shadow-lg'
-                  onMouseLeave={() => setShowPageSizeSelector(false)}
-                >
-                  {pageSizeOptions.map(option => (
-                    <div
-                      key={option}
-                      className={cn(
-                        'cursor-pointer px-4 py-2 text-sm hover:bg-[#f5f5f5]',
-                        pageSize === option ? 'bg-[#f5f5f5] text-[#0a0a0a]' : 'text-[#737373]',
-                      )}
-                      onClick={() => handlePageSizeChange(option)}
-                    >
-                      {option}
-                    </div>
-                  ))}
-                </div>
-              </PortalToFollowElemContent>
-            </PortalToFollowElem>
-          </div>
-
-          {/* Page info */}
-          <span className='text-sm text-[#0a0a0a]'>
-            {t('common.pagination.page')} {currentPage} {t('common.pagination.of')} {totalPages}
-          </span>
-
-          {/* Navigation buttons */}
-          <div className='flex items-center gap-1'>
-            {/* First page */}
-            <button
-              type='button'
-              className={cn(
-                'flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e5e5] bg-white shadow-xs',
-                currentPage === 1 ? 'cursor-not-allowed opacity-50' : 'hover:bg-[#f5f5f5]',
-              )}
-              onClick={goToFirstPage}
-              disabled={currentPage === 1}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M11 12L7 8L11 4" stroke="#737373" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M6 12L6 4" stroke="#737373" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-
-            {/* Previous page */}
-            <button
-              type='button'
-              className={cn(
-                'flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e5e5] bg-white shadow-xs',
-                currentPage === 1 ? 'cursor-not-allowed opacity-50' : 'hover:bg-[#f5f5f5]',
-              )}
-              onClick={goToPreviousPage}
-              disabled={currentPage === 1}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10 12L6 8L10 4" stroke="#737373" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-
-            {/* Next page */}
-            <button
-              type='button'
-              className={cn(
-                'flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e5e5] bg-white shadow-xs',
-                currentPage === totalPages ? 'cursor-not-allowed opacity-50' : 'hover:bg-[#f5f5f5]',
-              )}
-              onClick={goToNextPage}
-              disabled={currentPage === totalPages}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 12L10 8L6 4" stroke="#737373" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-
-            {/* Last page */}
-            <button
-              type='button'
-              className={cn(
-                'flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e5e5] bg-white shadow-xs',
-                currentPage === totalPages ? 'cursor-not-allowed opacity-50' : 'hover:bg-[#f5f5f5]',
-              )}
-              onClick={goToLastPage}
-              disabled={currentPage === totalPages}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M5 12L9 8L5 4" stroke="#737373" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M10 12L10 4" stroke="#737373" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   )

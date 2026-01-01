@@ -8,7 +8,6 @@ import { useTranslation } from 'react-i18next'
 import { useDebounceFn, useLocalStorageState } from 'ahooks'
 import {
   RiApps2Line,
-  RiDragDropLine,
   RiExchange2Line,
   RiFile4Line,
   RiMessage3Line,
@@ -32,8 +31,7 @@ import CheckboxWithLabel from '@/app/components/datasets/create/website/base/che
 import PureSelect from '@/app/components/base/select/pure'
 import dynamic from 'next/dynamic'
 import Empty from './empty'
-import Footer from './footer'
-import { useGlobalPublicStore } from '@/context/global-public-context'
+// import Footer from './footer'
 import { AppModeEnum } from '@/types/app'
 import { useInfiniteAppList } from '@/service/use-apps'
 
@@ -48,7 +46,6 @@ const APPS_VIEW_MODE_KEY = 'apps-view-mode'
 
 const List = () => {
   const { t } = useTranslation()
-  const { systemFeatures } = useGlobalPublicStore()
   const router = useRouter()
   const { isCurrentWorkspaceEditor, isCurrentWorkspaceDatasetOperator } = useAppContext()
   const showTagManagementModal = useTagStore(s => s.showTagManagementModal)
@@ -229,7 +226,7 @@ const List = () => {
 
   return (
     <>
-      <div ref={containerRef} className='relative m-4 mx-auto flex h-0 w-full max-w-[1600px] shrink-0 grow flex-col overflow-y-auto rounded-xl bg-white'>
+      <div ref={containerRef} className='relative m-1 mx-auto flex h-0 w-full max-w-[1600px] shrink-0 grow flex-col overflow-y-auto rounded-xl bg-white'>
         {dragging && (
           <div className="absolute inset-0 z-50 m-0.5 rounded-2xl border-2 border-dashed border-components-dropzone-border-accent bg-[rgba(21,90,239,0.14)] p-2">
           </div>
@@ -238,7 +235,7 @@ const List = () => {
           <QuickCreate onSuccess={refetch} selectedAppType={activeTab} />
         )}
 
-        <div className='sticky top-0 z-10 flex flex-col gap-4 bg-background-body bg-white px-8 pb-5 pt-7'>
+        <div className='sticky top-0 z-10 flex flex-col gap-4 bg-background-body bg-white px-8 pb-2 pt-2'>
           <div className='flex flex-wrap items-center justify-between gap-y-2'>
             <div className='flex items-center gap-3'>
               <TabSliderNew
@@ -285,41 +282,41 @@ const List = () => {
             </div>
           </div>
         </div>
-        {hasAnyApp
-          ? viewMode === 'table'
-            ? (
-              <div className='flex min-h-0 flex-1 flex-col overflow-hidden px-8 pt-2'>
-                <AppTableView
-                  apps={pages.flatMap(page => page.data)}
-                  onRefresh={refetch}
-                />
-              </div>
-            )
-            : (
-              <div className='flex min-h-0 flex-1 flex-col overflow-hidden px-8 pt-2'>
-                <AppCardView
-                  apps={pages.flatMap(page => page.data)}
-                  onRefresh={refetch}
-                />
-              </div>
-            )
-          : <div className='relative grid grow grid-cols-1 content-start gap-4 overflow-hidden px-12 pt-2 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 2k:grid-cols-6'>
+        {!hasAnyApp && (
+          <div className='relative grid grow grid-cols-1 content-start gap-4 overflow-hidden px-12 pt-2 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 2k:grid-cols-6'>
             <Empty />
-          </div>}
-
-        {isCurrentWorkspaceEditor && (
-          <div
-            className={`flex items-center justify-center gap-2 py-4 ${dragging ? 'text-text-accent' : 'text-text-quaternary'}`}
-            role="region"
-            aria-label={t('app.newApp.dropDSLToCreateApp')}
-          >
-            <RiDragDropLine className="h-4 w-4" />
-            <span className="system-xs-regular">{t('app.newApp.dropDSLToCreateApp')}</span>
           </div>
         )}
-        {!systemFeatures.branding.enabled && (
-          <Footer />
+        {hasAnyApp && viewMode === 'table' && (
+          <div className='flex min-h-0 flex-1 flex-col overflow-hidden px-8 pt-2'>
+            <AppTableView
+              apps={pages.flatMap(page => page.data)}
+              onRefresh={refetch}
+            />
+          </div>
         )}
+        {hasAnyApp && viewMode !== 'table' && (
+          <div className='flex min-h-0 flex-1 flex-col overflow-hidden px-8 pt-2'>
+            <AppCardView
+              apps={pages.flatMap(page => page.data)}
+              onRefresh={refetch}
+            />
+          </div>
+        )}
+
+        {/* {isCurrentWorkspaceEditor && ( */}
+        {/*  <div */}
+        {/*    className={`flex items-center justify-center gap-2 py-4 ${dragging ? 'text-text-accent' : 'text-text-quaternary'}`} */}
+        {/*    role="region" */}
+        {/*    aria-label={t('app.newApp.dropDSLToCreateApp')} */}
+        {/*  > */}
+        {/*    <RiDragDropLine className="h-4 w-4" /> */}
+        {/*    <span className="system-xs-regular">{t('app.newApp.dropDSLToCreateApp')}</span> */}
+        {/*  </div> */}
+        {/* )} */}
+        {/* {!systemFeatures.branding.enabled && ( */}
+        {/*  <Footer /> */}
+        {/* )} */}
         <CheckModal />
         <div ref={anchorRef} className='h-0'> </div>
         {showTagManagementModal && (
